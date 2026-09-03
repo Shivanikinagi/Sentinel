@@ -1,62 +1,76 @@
 import { useLocation } from "react-router-dom";
 import { useFleet } from "../FleetDataContext";
 import { STATE_META } from "../humanize";
-import { BellIcon, SearchIcon } from "../icons";
+import { BellIcon } from "../icons";
 
-const TITLES: Record<string, { title: string; sub: string }> = {
-  "/": { title: "Dashboard", sub: "Fleet-wide decision-control overview" },
-  "/vehicle": { title: "Vehicle Details & Evidence Explorer", sub: "Live telemetry and evidence trust for TRUCK-042" },
-  "/pipeline": { title: "Harness Pipeline & Controller", sub: "Sensors → Gate → Critic → Controller → Action" },
-  "/simulation": { title: "Simulation Lab", sub: "Drive every scene and failure mode on demand" },
-  "/audit": { title: "Audit Logs & Decision Details", sub: "Immutable, append-only record of every run" },
-  "/analytics": { title: "Analytics & System Health", sub: "Trends, confidence, and component health" },
-  "/settings": { title: "Settings", sub: "View mode, environment, and model configuration" },
-};
-
-const USER_EMAIL = "subrato.biswas@trinamix.com";
-
-function initialsOf(email: string): string {
-  const name = email.split("@")[0] ?? "";
-  const parts = name.split(/[._-]/).filter(Boolean);
-  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "U";
+interface TopbarProps {
+  onOpenGuide: () => void;
 }
 
-export function Topbar() {
+const TITLES: Record<string, { title: string; sub: string }> = {
+  "/": { title: "Mission Control Dashboard", sub: "Autonomous fleet safety & decision-control layer" },
+  "/vehicle": { title: "TRUCK-042 Cold-Chain Explorer", sub: "Live sensor stream & trust gate validation" },
+  "/pipeline": { title: "Decision Pipeline Architecture", sub: "Sensors → Trust Gate → LLM Critic → Controller → Action Gateway" },
+  "/simulation": { title: "Scenario & Failure Mode Lab", sub: "Simulate anomalies, killed agents, and corrupt models" },
+  "/audit": { title: "Immutable Audit Log", sub: "Append-only SQLite audit trail & replay store" },
+  "/analytics": { title: "Harness Telemetry & Health", sub: "System response time, confidence trends, & module isolation" },
+  "/settings": { title: "Harness Configuration", sub: "OpenRouter model keys & threshold settings" },
+};
+
+export function Topbar({ onOpenGuide }: TopbarProps) {
   const { pathname } = useLocation();
-  const { decision, technical, setMode } = useFleet();
+  const { decision, backend, technical, setMode, setScenario, actions } = useFleet();
   const meta = TITLES[pathname] ?? TITLES["/"];
   const state = decision?.controller_state ?? null;
-  const tone = state ? STATE_META[state].tone : "idle";
+  const tone = state && STATE_META[state] ? STATE_META[state].tone : "idle";
 
   return (
     <header className="topbar">
-      <div>
+      <div className="topbar-left">
         <h1 className="topbar-title">{meta.title}</h1>
         <div className="topbar-sub">{meta.sub}</div>
       </div>
 
-      <div className="topbar-search">
-        <SearchIcon size={14} />
-        <input placeholder="Search vehicles, runs, evidence…" />
+      <div className="topbar-quick-scenes">
+        <span className="scene-label">DEMO SCENES:</span>
+        <button className="btn-scene btn-scene-healthy" title="Scene 1: Normal Operation" onClick={() => setScenario("healthy")}>
+          🟢 Healthy
+        </button>
+        <button className="btn-scene btn-scene-risk" title="Scene 2: Contradiction Anomaly" onClick={() => setScenario("compound_risk")}>
+          🔴 Risk Anomaly
+        </button>
       </div>
 
       <div className="topbar-right">
-        <div className="mode-toggle" role="tablist" aria-label="View mode">
-          <button role="tab" aria-selected={!technical} className={!technical ? "active" : ""} onClick={() => setMode(false)}>
+        <button className="btn-presenter" onClick={onOpenGuide}>
+          ✨ Presenter Demo Script
+        </button>
+
+        <div className="mode-toggle">
+          <button className={!technical ? "active" : ""} onClick={() => setMode(false)}>
             Simple
           </button>
-          <button role="tab" aria-selected={technical} className={technical ? "active" : ""} onClick={() => setMode(true)}>
+          <button className={technical ? "active" : ""} onClick={() => setMode(true)}>
             Technical
           </button>
         </div>
 
-        <span className="env-pill">Production</span>
+        <span className="model-badge" title="Active Critic Backend">
+          🤖 {backend}
+        </span>
 
-        {state && <span className={`status-pill tone-${tone}`}><span className={`dot dot-${tone}`} />{state}</span>}
+        {state && (
+          <span className={`status-pill tone-${tone}`}>
+            <span className={`dot dot-${tone}`} />
+            {state}
+          </span>
+        )}
 
-        <button className="icon-btn" aria-label="Notifications"><BellIcon size={16} /></button>
-
-        <div className="avatar" title={USER_EMAIL}>{initialsOf(USER_EMAIL)}</div>
+        {actions.length > 0 && (
+          <span className="pending-badge animate-pulse" title="Human Approvals Required">
+            <BellIcon size={14} /> {actions.length} Pending
+          </span>
+        )}
       </div>
     </header>
   );

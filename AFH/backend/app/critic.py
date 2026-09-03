@@ -177,29 +177,44 @@ class OpenRouterCritic:
              "source": e.source.value, "status": e.status.value}
             for e in evidence
         ]
-        body = {
-            "model": self._s.llm_model,
-            "temperature": 0,
-            "messages": [
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user",
-                 "content": "Evidence:\n" + json.dumps(payload, indent=2)},
-            ],
-        }
         headers = {
             "Authorization": f"Bearer {self._s.openrouter_api_key}",
-            # OpenRouter attribution headers (optional, recommended).
             "HTTP-Referer": "https://github.com/fleet-harness",
             "X-Title": "Fleet-Harness",
         }
+
+        models_to_try = [self._s.llm_model]
+        for m in getattr(self._s, "fallback_models", []):
+            if m and m not in models_to_try:
+                models_to_try.append(m)
+
+        last_exc: Exception | None = None
         with httpx.Client(timeout=self._s.llm_timeout_seconds) as client:
-            resp = client.post(
-                f"{self._s.openrouter_base_url}/chat/completions",
-                json=body, headers=headers,
-            )
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"]
-        return _extract_json_object(content)
+            for model_name in models_to_try:
+                body = {
+                    "model": model_name,
+                    "temperature": 0,
+                    "messages": [
+                        {"role": "system", "content": _SYSTEM_PROMPT},
+                        {"role": "user", "content": "Evidence:\n" + json.dumps(payload, indent=2)},
+                    ],
+                }
+                try:
+                    resp = client.post(
+                        f"{self._s.openrouter_base_url}/chat/completions",
+                        json=body, headers=headers,
+                    )
+                    resp.raise_for_status()
+                    content = resp.json()["choices"][0]["message"]["content"]
+                    return _extract_json_object(content)
+                except Exception as exc:
+                    last_exc = exc
+                    continue
+
+        if last_exc:
+            raise last_exc
+        raise RuntimeError("No models available to produce critic result")
+
 
 
 def _extract_json_object(content: str) -> dict[str, Any]:

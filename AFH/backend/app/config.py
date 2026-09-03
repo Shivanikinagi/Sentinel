@@ -25,7 +25,12 @@ class Settings(BaseSettings):
     # --- LLM (OpenRouter default) ---
     openrouter_api_key: str | None = Field(default=None)
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    llm_model: str = "openai/gpt-4o-mini"
+    llm_model: str = "inclusionai/ling-3.0-flash-fin:free"
+    fallback_models: list[str] = [
+        "nvidia/nemotron-3.5-lightning:free",
+        "dots-studio/dots-3-note-preview:free",
+        "liquid/lfm-2.5-2.6b:free",
+    ]
     llm_timeout_seconds: float = 20.0
     force_mock_critic: bool = False
 
@@ -56,3 +61,8 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def clear_settings_cache() -> None:
+    get_settings.cache_clear()
+
