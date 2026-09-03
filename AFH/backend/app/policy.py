@@ -38,12 +38,14 @@ REQUIRED_SIGNALS: tuple[str, ...] = (
 )
 
 # --- Cold-chain thresholds (used by the Critic to reason; NOT by the gate). ----
+CARGO_TARGET_MIN_C = 2.0     # cold-chain target band lower bound
 CARGO_TARGET_MAX_C = 6.0     # cold-chain target band upper bound
 CARGO_WARN_C = 8.0           # above this: elevated risk
 CARGO_CRITICAL_C = 10.0      # above this: critical
 AMBIENT_HIGH_C = 35.0        # hot enough to stress the cold chain
 DWELL_LONG_MIN = 20.0        # extended stop/idle
 COOLING_ON = 1.0
+COOLING_OFF = 0.0
 
 
 def classify_freshness(

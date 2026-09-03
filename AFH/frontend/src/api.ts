@@ -43,6 +43,9 @@ export const api = {
   unauthorizedAction: () =>
     req<ProbeResult>("/simulate/unauthorized-action", { method: "POST" }),
 
+  emergencyOverride: () => req("/simulate/emergency-override", { method: "POST" }),
+  sensorDrift: (temp = 14.5) => req(`/simulate/sensor-drift?cargo_temp=${temp}`, { method: "POST" }),
+  tripCircuitBreaker: () => req("/simulate/circuit-breaker", { method: "POST" }),
   approve: (id: string, approver: string) =>
     req<ActionRequest>(`/actions/${id}/approve`, {
       method: "POST",

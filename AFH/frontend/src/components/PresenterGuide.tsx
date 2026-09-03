@@ -29,7 +29,7 @@ export function PresenterGuide({ isOpen, onClose }: PresenterGuideProps) {
       trigger: () => fleet.setScenario("compound_risk"),
       story: "Cooling status reports ON (1.0), but cargo temperature is rising at 11.5°C in 41°C ambient weather.",
       script: "Here is the key contradiction! The LLM Critic notices that reporting cooling ON while cargo climbs is physically inconsistent. It flags a contradiction. The controller drops state to CRITICAL_HALT and requires HUMAN approval before any automated cooling override can execute.",
-      proof: "critic.py (OpenRouter JSON validation) + actions.py (Layer 2 Action Gateway)",
+      proof: "critic.py (OpenRouter JSON validation) + verifier.py (3-point verification check) + actions.py (Layer 2 Action Gateway)",
     },
     {
       id: "sensor_blackout",
@@ -48,8 +48,8 @@ export function PresenterGuide({ isOpen, onClose }: PresenterGuideProps) {
       badgeClass: "badge-purple",
       trigger: () => fleet.corruptLlm(),
       story: "Model returns invalid JSON, missing required fields, or extra hallucinated authority parameters.",
-      script: "No LLM output reaches the Controller without strict Pydantic validation (extra='forbid'). Watch how a corrupted LLM response is instantly rejected, causing the harness to maintain safety rather than crashing.",
-      proof: "critic.py (RiskMatrix validation) & test_critic_validation.py",
+      script: "No LLM output reaches the Controller without strict Pydantic validation (extra='forbid') and Verifier self-consistency checks. Watch how a corrupted LLM response is instantly rejected, causing the harness to maintain safety rather than crashing.",
+      proof: "critic.py (RiskMatrix validation) & verifier.py",
     },
     {
       id: "stale_signal",
@@ -69,7 +69,7 @@ export function PresenterGuide({ isOpen, onClose }: PresenterGuideProps) {
       trigger: () => fleet.runProbe(),
       story: "Simulates an adversarial agent trying to execute a fleet action directly.",
       script: "Notice that agents have no code paths to execute fleet actions. The Action Gateway is strictly protected by the Layer 2 Controller.",
-      proof: "security.py & test_isolation.py",
+      proof: "security.py & test_isolation.py & tools.py",
     },
   ];
 
@@ -79,17 +79,21 @@ export function PresenterGuide({ isOpen, onClose }: PresenterGuideProps) {
         <div className="presenter-drawer-header">
           <div>
             <span className="presenter-tag">DEMO PRESENTER GUIDE</span>
-            <h2>Judge Presentation Script & Scene Guide</h2>
-            <p>Step-by-step walkthrough for demonstrating Fleet-Harness capabilities</p>
+            <h2>Judge Presentation Script & Pitch Quotes</h2>
+            <p>Executive pitch lines and step-by-step scene walkthrough</p>
           </div>
           <button className="btn-close" onClick={onClose}>✕</button>
         </div>
 
         <div className="presenter-drawer-body">
           <div className="presenter-intro">
-            <h4>💡 Core Thesis to State First:</h4>
+            <h4>🎤 Key Pitch Lines to Quote to Judges:</h4>
             <blockquote>
-              "AI provides intelligence. The harness provides trust boundaries. Deterministic code provides authority. <strong>The LLM is never the final authority over an operational action.</strong>"
+              <p>• "We don't just validate the LLM's output once—<strong>we verify it with our deterministic Verifier sub-system</strong>."</p>
+              <p>• "Every decision has a <strong>cryptographic provenance trail</strong> and step-by-step trace timeline you can inspect."</p>
+              <p>• "If the LLM fails or times out, the system doesn't crash—<strong>the Circuit Breaker trips and it degrades gracefully</strong>."</p>
+              <p>• "The AI suggests; we decide; <strong>the deterministic code acts</strong>."</p>
+              <p>• "This isn't about making AI perfect. It's about <strong>making the system reliable even when AI isn't</strong>."</p>
             </blockquote>
           </div>
 

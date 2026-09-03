@@ -5,6 +5,7 @@ import { BellIcon } from "../icons";
 
 interface TopbarProps {
   onOpenGuide: () => void;
+  onOpenExplainer: () => void;
 }
 
 const TITLES: Record<string, { title: string; sub: string }> = {
@@ -17,9 +18,14 @@ const TITLES: Record<string, { title: string; sub: string }> = {
   "/settings": { title: "Harness Configuration", sub: "OpenRouter model keys & threshold settings" },
 };
 
-export function Topbar({ onOpenGuide }: TopbarProps) {
+export function Topbar({ onOpenGuide, onOpenExplainer }: TopbarProps) {
   const { pathname } = useLocation();
-  const { decision, backend, technical, setMode, setScenario, actions } = useFleet();
+  const {
+    decision, backend, technical, setMode, setScenario, actions,
+    emergencyOverride, survivedFailuresCount, timeLapseSpeed, setTimeLapseSpeed,
+    autoPlayActive, startAutoPlay,
+  } = useFleet();
+
   const meta = TITLES[pathname] ?? TITLES["/"];
   const state = decision?.controller_state ?? null;
   const tone = state && STATE_META[state] ? STATE_META[state].tone : "idle";
@@ -27,7 +33,12 @@ export function Topbar({ onOpenGuide }: TopbarProps) {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <h1 className="topbar-title">{meta.title}</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <h1 className="topbar-title">{meta.title}</h1>
+          <span className="harness-badge" title="Harness Guarantee">
+            🛡️ LLM Zero Decision Authority
+          </span>
+        </div>
         <div className="topbar-sub">{meta.sub}</div>
       </div>
 
@@ -39,12 +50,37 @@ export function Topbar({ onOpenGuide }: TopbarProps) {
         <button className="btn-scene btn-scene-risk" title="Scene 2: Contradiction Anomaly" onClick={() => setScenario("compound_risk")}>
           🔴 Risk Anomaly
         </button>
+        <button className={`btn-scene ${autoPlayActive ? "active" : ""}`} title="1-Click Auto-Play Presentation" onClick={startAutoPlay}>
+          {autoPlayActive ? "⏳ Playing..." : "▶ Auto-Play Demo"}
+        </button>
       </div>
 
       <div className="topbar-right">
-        <button className="btn-presenter" onClick={onOpenGuide}>
-          ✨ Presenter Demo Script
+        {/* Big Red Button */}
+        <button className="btn-emergency-override" title="Big Red Button: Emergency Human Override" onClick={emergencyOverride}>
+          🚨 EMERGENCY OVERRIDE
         </button>
+
+        <button className="btn-presenter" onClick={onOpenGuide}>
+          ✨ Presenter Script
+        </button>
+
+        <button className="btn-explainer" title="Explain Current Decision" onClick={onOpenExplainer}>
+          🔍 Why This Decision?
+        </button>
+
+        <div className="timelapse-selector" title="Time-Lapse Fast-Forward">
+          <span className="timelapse-label font-mono">Speed:</span>
+          {[1, 5, 10].map((s) => (
+            <button key={s} className={timeLapseSpeed === s ? "active" : ""} onClick={() => setTimeLapseSpeed(s)}>
+              {s}x
+            </button>
+          ))}
+        </div>
+
+        <span className="survival-counter font-mono" title="Anomalies Survived Without System Outage">
+          🛡️ Survived: {survivedFailuresCount}
+        </span>
 
         <div className="mode-toggle">
           <button className={!technical ? "active" : ""} onClick={() => setMode(false)}>

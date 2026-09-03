@@ -19,6 +19,11 @@ interface FleetData {
   toast: string | null;
   busy: boolean;
   technical: boolean;
+  survivedFailuresCount: number;
+  timeLapseSpeed: number;
+  autoPlayActive: boolean;
+  setTimeLapseSpeed: (speed: number) => void;
+  startAutoPlay: () => void;
   setMode: (tech: boolean) => void;
   runNow: () => void;
   approve: (id: string) => void;
@@ -28,6 +33,9 @@ interface FleetData {
   killAgent: (agent: "agent_a" | "agent_b", disabled: boolean) => void;
   corruptLlm: () => void;
   staleSignal: (signal: string | null) => void;
+  emergencyOverride: () => void;
+  sensorDrift: (temp?: number) => void;
+  tripCircuitBreaker: () => void;
   reset: () => void;
 }
 
@@ -43,6 +51,10 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
   const [probe, setProbe] = useState<ProbeResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [survivedFailuresCount, setSurvivedFailuresCount] = useState(4);
+  const [timeLapseSpeed, setTimeLapseSpeed] = useState(1);
+  const [autoPlayActive, setAutoPlayActive] = useState(false);
+
   const [technical, setTechnical] = useState<boolean>(() => {
     try { return localStorage.getItem(VIEW_KEY) === "technical"; } catch { return false; }
   });
@@ -68,55 +80,92 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
       setActions(pending);
       setAudit(aud);
     } catch {
-      /* backend not up yet; keep last state */
+      /* backend not up yet */
     }
   }, []);
 
   useEffect(() => {
     api.health().then((h) => setBackend(h.critic_backend)).catch(() => setBackend("offline"));
     refresh();
-    const t = setInterval(refresh, 1500);
+    const t = setInterval(refresh, 1500 / timeLapseSpeed);
     return () => clearInterval(t);
-  }, [refresh]);
+  }, [refresh, timeLapseSpeed]);
 
-  const guard = async (fn: () => Promise<unknown>, msg: string) => {
+  const guard = async (fn: () => Promise<unknown>, msg: string, incrementFailure = false) => {
     setBusy(true);
     try {
       await fn();
       await refresh();
+      if (incrementFailure) {
+        setSurvivedFailuresCount((prev) => prev + 1);
+      }
       flash(msg);
     } catch (e) {
-      flash(`Something went wrong: ${(e as Error).message}`);
+      flash(`Error: ${(e as Error).message}`);
     } finally {
       setBusy(false);
     }
   };
 
-  const sw = world?.switches;
+  const startAutoPlay = async () => {
+    if (autoPlayActive) return;
+    setAutoPlayActive(true);
+    flash("▶ Starting Auto-Play Presentation Mode...");
+
+    const steps = [
+      { name: "healthy", msg: "Scene 1: Healthy Run" },
+      { name: "compound_risk", msg: "Scene 2: Contradiction Risk" },
+      { action: () => api.killAgent("agent_a", true), msg: "Scene 3: Agent Blackout" },
+      { action: () => api.corruptLlm(), msg: "Scene 4: Corrupt LLM Payload" },
+      { action: () => api.staleSignal("cargo_temperature"), msg: "Scene 5: Stale Evidence" },
+      { action: () => api.reset(), msg: "Scene 6: Reset to Healthy" },
+    ];
+
+    for (const step of steps) {
+      setBusy(true);
+      flash(step.msg);
+      if (step.name) {
+        await api.scenario(step.name);
+      } else if (step.action) {
+        await step.action();
+      }
+      await api.run();
+      await refresh();
+      setBusy(false);
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+    setAutoPlayActive(false);
+    flash("✓ Auto-Play Presentation Complete!");
+  };
 
   const value: FleetData = {
     decision, history, world, actions, audit, backend, probe, toast, busy, technical,
+    survivedFailuresCount, timeLapseSpeed, autoPlayActive, setTimeLapseSpeed, startAutoPlay,
     setMode,
-    runNow: () => guard(async () => setDecision(await api.run()), "Check complete"),
-    approve: (id) => guard(() => api.approve(id, "ops@fleet"), "Approved and carried out"),
+    runNow: () => guard(async () => setDecision(await api.run()), "Harness Check Complete"),
+    approve: (id) => guard(() => api.approve(id, "ops@fleet"), "Approved & Carried Out"),
     reject: (id) => {
       const reason = prompt("Why are you rejecting this?") ?? "rejected by operator";
       return guard(() => api.reject(id, "ops@fleet", reason), "Rejected");
     },
-    runProbe: () => guard(async () => setProbe(await api.unauthorizedAction()), "Security check complete"),
-    setScenario: (name) => guard(() => api.scenario(name), name === "compound_risk" ? "Simulating a risky situation" : "Back to normal conditions"),
+    runProbe: () => guard(async () => setProbe(await api.unauthorizedAction()), "Security Probe Passed", true),
+    setScenario: (name) => guard(() => api.scenario(name), name === "compound_risk" ? "Simulating Contradiction Anomaly" : "Healthy Operations"),
     killAgent: (agent, disabled) => guard(
       () => api.killAgent(agent, disabled),
-      disabled ? `${agent === "agent_a" ? "Truck sensors" : "Route sensors"} disconnected` : `${agent === "agent_a" ? "Truck sensors" : "Route sensors"} reconnected`
+      disabled ? `${agent === "agent_a" ? "Truck" : "Route"} Sensor Offline` : "Sensor Restored",
+      disabled
     ),
-    corruptLlm: () => guard(() => api.corruptLlm(), "Next AI answer will be broken on purpose"),
+    corruptLlm: () => guard(() => api.corruptLlm(), "Corrupt LLM Output Injected", true),
     staleSignal: (signal) => guard(
       () => api.staleSignal(signal),
-      signal ? "Cargo temperature reading is now old" : "Old data cleared"
+      signal ? "Telemetry Backdated to Stale" : "Stale Flag Cleared",
+      Boolean(signal)
     ),
-    reset: () => guard(() => api.reset(), "Everything reset"),
+    emergencyOverride: () => guard(() => api.emergencyOverride(), "🚨 EMERGENCY HUMAN OVERRIDE ENGAGED", true),
+    sensorDrift: (temp = 14.5) => guard(() => api.sensorDrift(temp), `Sensor Drift: Temp set to ${temp}°C`, true),
+    tripCircuitBreaker: () => guard(() => api.tripCircuitBreaker(), "⚡ LLM Circuit Breaker Tripped to OPEN", true),
+    reset: () => guard(() => api.reset(), "Harness State Reset"),
   };
-  void sw;
 
   return (
     <Ctx.Provider value={value}>
