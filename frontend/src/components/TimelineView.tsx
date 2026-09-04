@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useFleet } from "../FleetDataContext";
-import { stepLabel } from "../humanize";
+import { stepLabel, stepPurpose } from "../humanize";
 import type { DecisionStep } from "../types";
 
 function statusClassOf(step: DecisionStep): string {
   return step.status === "OK" ? "step-ok" : step.status === "WARNING" ? "step-warn" : "step-failed";
 }
+
+const RECOVERED_RE = /\((\d+) attempts?\)/;
 
 export function TimelineView() {
   const { decision } = useFleet();
@@ -58,18 +60,23 @@ export function TimelineView() {
       <div className="timeline-steps">
         {chain.slice(0, visibleCount).map((step, idx) => {
           const isRetry = step.step_name.startsWith("retry_");
+          const recoveredMatch = step.detail.match(RECOVERED_RE);
+          const recovered = recoveredMatch && Number(recoveredMatch[1]) > 1 && step.status === "OK";
+          const purpose = stepPurpose(step.step_name);
           return (
             <div key={idx} className={`timeline-step-item ${statusClassOf(step)}${isRetry ? " step-retry" : ""}`}>
               <div className="step-num">{isRetry ? "↻" : idx + 1}</div>
               <div className="step-content">
                 <div className="step-content-top">
                   <span className="step-name">
-                    {isRetry && <span className="badge badge-warning" style={{ marginRight: 6 }}>RETRY</span>}
+                    {isRetry && <span className="badge badge-warning" style={{ marginRight: 6 }}>ATTEMPT FAILED ✕</span>}
+                    {recovered && <span className="badge badge-info" style={{ marginRight: 6 }}>RECOVERED ✓</span>}
                     {stepLabel(step.step_name)}
                   </span>
                   <span className="step-duration font-mono">{step.duration_ms} ms</span>
                 </div>
                 <div className="step-detail">{step.detail}</div>
+                {purpose && <div className="step-purpose">Purpose: {purpose}</div>}
 
                 {step.step_name === "trust_gate" && gateStages.length > 0 && (
                   <div className="gate-stage-breakdown">

@@ -80,6 +80,15 @@ export interface ConfidenceBreakdown {
   signals: SignalConfidence[];
 }
 
+export interface CompositeConfidence {
+  evidence_quality: number;
+  verifier_score: number;
+  gate_cleanliness: number;
+  policy_compliance: number;
+  historical_reliability: number;
+  composite: number;
+}
+
 export interface ControllerDecision {
   run_id: string;
   vehicle_id: string;
@@ -88,11 +97,26 @@ export interface ControllerDecision {
   reason: string;
   confidence: number;
   confidence_breakdown?: ConfidenceBreakdown | null;
+  composite_confidence?: CompositeConfidence | null;
   policy_pack: string;
   risk_matrix: RiskMatrix | null;
   critic_rejected: boolean;
   trace: DecisionTrace;
   escalation_id: string | null;
+}
+
+export interface IncidentRecord {
+  run_id: string;
+  vehicle_id: string;
+  timestamp: string;
+  reason: string;
+  risk_factors: string[];
+  confidence: number;
+  policy_pack: string;
+  escalation_id: string | null;
+  resolution_status: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
 }
 
 export interface PolicyPackInfo {

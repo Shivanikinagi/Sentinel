@@ -44,7 +44,8 @@ export function LiveExecutionPanel({
   actions: ActionRequest[]; busy: boolean; onRun: () => void;
 }) {
   const t = decision?.trace;
-  const agentsTone: Tone = !decision ? "idle" : t!.agents_unavailable.length ? "bad" : "good";
+  const vehicleAgentTone: Tone = !decision ? "idle" : t!.agents_unavailable.includes("agent_a") ? "bad" : "good";
+  const envAgentTone: Tone = !decision ? "idle" : t!.agents_unavailable.includes("agent_b") ? "bad" : "good";
   const gateTone: Tone = !decision ? "idle" : t!.excluded_evidence_ids.length ? "warn" : "good";
   const criticTone: Tone = !decision ? "idle"
     : decision.critic_rejected ? "bad"
@@ -53,7 +54,8 @@ export function LiveExecutionPanel({
   const controllerTone: Tone = decision ? (STATE_META[decision.controller_state].tone as Tone) : "idle";
   const actionTone: Tone = actions.length ? "warn" : "idle";
 
-  const agentsValue = decision ? `${t!.agents_reporting.length}/2 reporting` : "standing by";
+  const vehicleAgentValue = !decision ? "standing by" : vehicleAgentTone === "bad" ? "unavailable" : "reporting";
+  const envAgentValue = !decision ? "standing by" : envAgentTone === "bad" ? "unavailable" : "reporting";
   const trusted = decision ? t!.evidence_snapshot.length - t!.excluded_evidence_ids.length : 0;
   const gateValue = decision ? `${trusted} trusted, ${t!.excluded_evidence_ids.length} excluded` : "standing by";
   const criticValue = !decision ? "standing by"
@@ -81,13 +83,16 @@ export function LiveExecutionPanel({
       </div>
 
       <div className="mc-flow">
-        <Node label="Vehicle Sensor Agents" value={agentsValue} tone={agentsTone} processing={busy} />
+        <div className="mc-parallel-pair">
+          <Node label="Vehicle Agent" value={vehicleAgentValue} tone={vehicleAgentTone} processing={busy} />
+          <Node label="Environment Agent" value={envAgentValue} tone={envAgentTone} processing={busy} />
+        </div>
         <Connector flowing={busy} />
         <Node label="Trust Gate" value={gateValue} tone={gateTone} processing={busy} />
         <Connector flowing={busy} />
         <Node label="Risk Assessment Engine" value={criticValue} tone={criticTone} processing={busy} />
         <Connector flowing={busy} />
-        <Node label="Deterministic Controller" value={controllerValue} tone={controllerTone} processing={busy} />
+        <Node label="Decision Authority" value={controllerValue} tone={controllerTone} processing={busy} />
         <Connector flowing={busy} />
         <Node label="Action Gateway" value={actionValue} tone={actionTone} processing={busy} />
       </div>

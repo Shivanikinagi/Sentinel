@@ -39,6 +39,8 @@ export function signalValue(signal: string, value: number, unit: string): string
 }
 
 export const STEP_LABELS: Record<string, string> = {
+  agent_vehicle_observer: "Vehicle Agent",
+  agent_environment_observer: "Environment Agent",
   telemetry_observation: "Telemetry Observation",
   trust_gate: "Trust Gate",
   schema_validator: "Schema Validator",
@@ -49,11 +51,31 @@ export const STEP_LABELS: Record<string, string> = {
   risk_assessment_engine: "Risk Assessment Engine",
   retry_risk_assessment_engine: "Retry — Risk Assessment Engine",
   verifier_subsystem: "Verifier Sub-System",
-  deterministic_controller: "Deterministic Controller",
+  deterministic_controller: "Decision Authority",
 }
 
 export function stepLabel(stepName: string): string {
   return STEP_LABELS[stepName] ?? prettify(stepName);
+}
+
+// One line each: why this stage exists, not what it does (the label already
+// says what). Small addition, meant to be read in passing during a demo.
+export const STEP_PURPOSE: Record<string, string> = {
+  agent_vehicle_observer: "Reads only the truck's own sensors — cannot see route/weather data.",
+  agent_environment_observer: "Reads only route/weather data — cannot see truck sensors.",
+  trust_gate: "Prevent bad evidence: exclude stale, wrong-source, or unrecognized signals.",
+  schema_validator: "Confirm every reading is a well-formed, typed observation.",
+  freshness_checker: "Exclude readings too old to still be trustworthy.",
+  provenance_checker: "Exclude readings that didn't come from their authorized sensor.",
+  evidence_normalizer: "Keep only the freshest reading per signal — no double-counting.",
+  evidence_correlation: "Catch physical contradictions before the AI ever reasons about them.",
+  risk_assessment_engine: "Reasoning: turn trusted evidence into a risk assessment.",
+  verifier_subsystem: "Catch an AI answer that contradicts the evidence it was given.",
+  deterministic_controller: "Final authority: the one place that turns evidence into a decision.",
+};
+
+export function stepPurpose(stepName: string): string | undefined {
+  return STEP_PURPOSE[stepName];
 }
 
 export const SOURCE_META: Record<string, { title: string; sub: string }> = {

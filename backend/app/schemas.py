@@ -112,6 +112,19 @@ class ConfidenceBreakdown(BaseModel):
     signals: list[SignalConfidence] = Field(default_factory=list)
 
 
+class CompositeConfidence(BaseModel):
+    """Confidence as a product of independently observable system signals —
+    not a single number and not anything the LLM self-reports. Additive to
+    `ControllerDecision.confidence` (the tested evidence-completeness formula);
+    this is a second, richer view for analysis/display."""
+    evidence_quality: float       # = ControllerDecision.confidence (trusted/expected)
+    verifier_score: float         # 1.0 if the Verifier passed, 0.5 if it failed
+    gate_cleanliness: float       # trusted / (trusted + excluded) evidence
+    policy_compliance: float      # 1.0 minus a penalty per correlation conflict
+    historical_reliability: float # this vehicle's recent non-halt rate (1.0 with no history)
+    composite: float              # product of the five, clamped to [0, 1]
+
+
 class DecisionTrace(BaseModel):
     """Why-this-decision record. Everything the Controller saw."""
     evidence_ids: list[str] = Field(default_factory=list)
@@ -136,11 +149,28 @@ class ControllerDecision(BaseModel):
     reason: str
     confidence: float  # computed in code, never self-reported by the LLM
     confidence_breakdown: Optional[ConfidenceBreakdown] = None
+    composite_confidence: Optional[CompositeConfidence] = None
     policy_pack: str = "cold_chain"
     risk_matrix: Optional[RiskMatrix] = None
     critic_rejected: bool = False
     trace: DecisionTrace
     escalation_id: Optional[str] = None
+
+
+class IncidentRecord(BaseModel):
+    """One row of Incident Memory — a past CRITICAL_HALT, distinct from the
+    Memory (trend) subsystem's routine signal history."""
+    run_id: str
+    vehicle_id: str
+    timestamp: datetime
+    reason: str
+    risk_factors: list[str] = Field(default_factory=list)
+    confidence: float
+    policy_pack: str
+    escalation_id: Optional[str] = None
+    resolution_status: Optional[str] = None   # ActionStatus value, if an action exists
+    resolved_by: Optional[str] = None
+    resolved_at: Optional[str] = None
 
 
 class PolicyPackInfo(BaseModel):

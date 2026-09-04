@@ -16,11 +16,12 @@ import time
 
 from . import controller
 from .agents import AgentUnavailable, EnvironmentObserver, VehicleObserver
-from .audit import Audit, AuditEvent
+from .audit import AuditEvent
 from .circuit_breaker import CircuitBreaker, CircuitOpenError
 from .config import Settings
 from .correlation import CorrelationEngine
 from .critic import Critic, CriticResult
+from .events import EventBus
 from .gate import evaluate as gate_evaluate
 from .planner import Planner
 from .policy_packs import PolicyPack
@@ -33,6 +34,11 @@ from .world import WorldState
 
 
 class Supervisor:
+    """Starts each agent, times every stage, retries the Risk Assessment
+    Engine on a transient failure, and publishes one event per stage onto the
+    Harness Runtime's EventBus — Audit is a subscriber of that bus (see
+    pipeline.build_harness), not something Supervisor calls directly."""
+
     def __init__(
         self, *, critic: Critic, settings: Settings,
         agent_a: VehicleObserver | None = None,
@@ -43,7 +49,7 @@ class Supervisor:
         tool_registry: ToolRegistry | None = None,
         circuit_breaker: CircuitBreaker | None = None,
         retry_engine: RetryEngine | None = None,
-        audit: Audit | None = None,
+        events: EventBus | None = None,
     ) -> None:
         self._critic = critic
         self._settings = settings
@@ -57,7 +63,7 @@ class Supervisor:
         self._retry_engine = retry_engine or RetryEngine(
             max_attempts=getattr(settings, "critic_max_attempts", 2)
         )
-        self._audit = audit
+        self._events = events or EventBus()
 
     @property
     def tool_registry(self) -> ToolRegistry:
@@ -77,17 +83,25 @@ class Supervisor:
         run_state.status = run_state.status  # left RUNNING; Harness marks COMPLETED
         return run_state
 
-    # -- Stage 1: Telemetry Observation (Planner + agents + ToolRegistry) -------
+    # -- Stage 1: Planner + per-agent dispatch (Supervisor launches each agent) --
     def _observe(self, world: WorldState, run_state: RunState) -> None:
-        t0 = time.perf_counter()
         plan = self._planner.plan(self._agent_a, self._agent_b)
+        self._events.publish(AuditEvent.PLANNING_FINISHED, run_state.run_id, {
+            "agents": [p.name for p in plan.agents], "parallel": plan.parallel,
+            "rationale": plan.rationale,
+        })
 
         tool_by_source = {
             AgentSource.AGENT_A: ("agent_a", "get_cargo_telemetry"),
             AgentSource.AGENT_B: ("agent_b", "get_environmental_telemetry"),
         }
 
+        # Both agents are launched under the same plan (provably independent
+        # scopes — see test_isolation.py) so their dispatch is recorded as two
+        # sibling steps, not folded into one aggregate: the trace should show
+        # the Supervisor launching each agent, not just "telemetry done."
         for planned in plan.agents:
+            t0 = time.perf_counter()
             agent_name, tool_name = tool_by_source[planned.source]
             try:
                 self._tool_registry.execute_tool(agent_name, tool_name)
@@ -98,26 +112,24 @@ class Supervisor:
                 evidence = planned.agent.observe(world, run_state.run_id, run_state.vehicle_id)
                 run_state.observed_evidence.extend(evidence)
                 run_state.completed_agents.append(planned.name)
+                status, detail = "OK", f"{len(evidence)} signals collected"
             except AgentUnavailable:
                 run_state.agents_unavailable.append(planned.source)
                 run_state.failed_agents.append(planned.name)
-                if self._audit:
-                    self._audit.record(AuditEvent.AGENT_UNAVAILABLE,
-                                       {"agent": planned.source.value}, run_id=run_state.run_id)
+                status, detail = "FAILED", "unavailable — no signals this run"
+                self._events.publish(AuditEvent.AGENT_UNAVAILABLE,
+                                     run_state.run_id, {"agent": planned.source.value})
 
-        dur = (time.perf_counter() - t0) * 1000
-        run_state.record_step(DecisionStep(
-            step_name="telemetry_observation",
-            status="WARNING" if run_state.agents_unavailable else "OK",
-            detail=(f"{len(run_state.observed_evidence)} signals collected via "
-                   f"{plan.rationale}, {len(run_state.agents_unavailable)} agents unavailable"),
-            duration_ms=round(dur, 2),
-        ))
-        if self._audit:
-            self._audit.record(AuditEvent.EVIDENCE_OBSERVED, {
-                "count": len(run_state.observed_evidence),
-                "signals": [e.signal for e in run_state.observed_evidence],
-            }, run_id=run_state.run_id)
+            dur = (time.perf_counter() - t0) * 1000
+            run_state.record_step(DecisionStep(
+                step_name=f"agent_{planned.name}", status=status, detail=detail,
+                duration_ms=round(dur, 2),
+            ))
+
+        self._events.publish(AuditEvent.EVIDENCE_OBSERVED, run_state.run_id, {
+            "count": len(run_state.observed_evidence),
+            "signals": [e.signal for e in run_state.observed_evidence],
+        })
 
     # -- Stage 2: Trust Gate (4 sub-stages, see gate.py) -------------------------
     def _gate(self, world: WorldState, run_state: RunState, policy_pack: PolicyPack) -> None:
@@ -140,13 +152,12 @@ class Supervisor:
             detail=f"{len(result.trusted)} trusted, {len(result.excluded_ids)} excluded",
             duration_ms=round(dur, 2),
         ))
-        if self._audit:
-            self._audit.record(AuditEvent.GATE_EVALUATED, {
-                "trusted": [e.signal for e in result.trusted],
-                "excluded_ids": result.excluded_ids,
-                "missing_required": result.missing_required,
-                "notes": result.gate_notes,
-            }, run_id=run_state.run_id)
+        self._events.publish(AuditEvent.GATE_EVALUATED, run_state.run_id, {
+            "trusted": [e.signal for e in result.trusted],
+            "excluded_ids": result.excluded_ids,
+            "missing_required": result.missing_required,
+            "notes": result.gate_notes,
+        })
 
     # -- Stage 3: Evidence Correlation -------------------------------------------
     def _correlate(self, run_state: RunState, policy_pack: PolicyPack) -> None:
@@ -202,10 +213,9 @@ class Supervisor:
                 duration_ms=0.0,
             )
             run_state.record_retry(retry_step)
-            if self._audit:
-                self._audit.record(AuditEvent.RETRY_ATTEMPTED, {
-                    "attempt": attempt, "reason": critic_result.rejection_reason,
-                }, run_id=run_state.run_id)
+            self._events.publish(AuditEvent.RETRY_ATTEMPTED, run_state.run_id, {
+                "attempt": attempt, "reason": critic_result.rejection_reason,
+            })
             attempt += 1
 
         dur = (time.perf_counter() - t0) * 1000
@@ -222,15 +232,13 @@ class Supervisor:
             detail=f"Backend: {critic_result.backend}, Rejected: {critic_result.rejected}{attempts_note}",
             duration_ms=round(dur, 2),
         ))
-        if self._audit:
-            if critic_result.rejected:
-                self._audit.record(AuditEvent.CRITIC_REJECTED, {
-                    "reason": critic_result.rejection_reason, "raw": critic_result.raw,
-                }, run_id=run_state.run_id)
-            else:
-                self._audit.record(AuditEvent.CRITIC_ASSESSED,
-                                   critic_result.matrix.model_dump(mode="json"),
-                                   run_id=run_state.run_id)
+        if critic_result.rejected:
+            self._events.publish(AuditEvent.CRITIC_REJECTED, run_state.run_id, {
+                "reason": critic_result.rejection_reason, "raw": critic_result.raw,
+            })
+        else:
+            self._events.publish(AuditEvent.CRITIC_ASSESSED, run_state.run_id,
+                                 critic_result.matrix.model_dump(mode="json"))
 
     # -- Stage 5: Verifier ---------------------------------------------------------
     def _verify(self, run_state: RunState) -> None:

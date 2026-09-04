@@ -8,13 +8,15 @@ from __future__ import annotations
 
 import pytest
 
+from app.audit import AuditEvent
 from app.config import Settings
 from app.critic import MockCritic
+from app.incidents import IncidentMemory
 from app.memory import TrendEngine
 from app.metrics import compute_metrics
 from app.pipeline import build_harness
 from app.policy_packs import PolicyEngine, TYRE_SAFETY
-from app.schemas import ControllerState
+from app.schemas import ActionStatus, ControllerState
 from app.store import Store
 from app.world import SCENARIOS, WorldState
 
@@ -162,3 +164,81 @@ def test_trend_engine_insufficient_data_for_unknown_vehicle(harness) -> None:
     trend = TrendEngine(harness.store).trend("GHOST-999", "cargo_temperature")
     assert trend.points == []
     assert trend.direction == "insufficient_data"
+
+
+# ----------------------------------------------------------------- event bus
+def test_event_bus_publishes_the_same_vocabulary_that_lands_in_audit(harness) -> None:
+    d = harness.run(_world("healthy"))
+    published_types = {e.event_type for e in harness.events.recent if e.run_id == d.run_id}
+    audited_types = {a["event_type"] for a in harness.store.recent_audit() if a["run_id"] == d.run_id}
+    # Every event this run published reached Audit — the sink is a strict
+    # subscriber, so nothing is added or dropped in translation.
+    assert published_types == audited_types
+    assert AuditEvent.RUN_STARTED in published_types
+    assert AuditEvent.PLANNING_FINISHED in published_types
+    assert AuditEvent.RUN_COMPLETED in published_types
+
+
+def test_event_bus_records_per_agent_dispatch_steps(harness) -> None:
+    d = harness.run(_world("healthy"))
+    names = [s.step_name for s in d.trace.decision_chain]
+    assert "agent_vehicle_observer" in names
+    assert "agent_environment_observer" in names
+
+
+def test_killed_agent_publishes_agent_unavailable_event(harness) -> None:
+    w = _world("healthy")
+    w.agent_b_disabled = True
+    d = harness.run(w)
+    published_types = {e.event_type for e in harness.events.recent if e.run_id == d.run_id}
+    assert AuditEvent.AGENT_UNAVAILABLE in published_types
+    failed_step = next(s for s in d.trace.decision_chain if s.step_name == "agent_environment_observer")
+    assert failed_step.status == "FAILED"
+
+
+# ------------------------------------------------------------- incident memory
+def test_incident_memory_records_a_pending_halt(harness) -> None:
+    d = harness.run(_world("compound_risk"))
+    incidents = IncidentMemory(harness.store).list_incidents(vehicle_id="TRUCK-042")
+    assert len(incidents) == 1
+    assert incidents[0].run_id == d.run_id
+    assert incidents[0].resolution_status == ActionStatus.PENDING_APPROVAL.value
+
+
+def test_incident_memory_reflects_resolution_after_approval(harness) -> None:
+    d = harness.run(_world("compound_risk"))
+    harness.gateway.approve(d.escalation_id, approver="ops@fleet")
+    incidents = IncidentMemory(harness.store).list_incidents(vehicle_id="TRUCK-042")
+    assert incidents[0].resolution_status == ActionStatus.EXECUTED.value
+    assert incidents[0].resolved_by == "ops@fleet"
+
+
+def test_incident_memory_excludes_healthy_runs(harness) -> None:
+    harness.run(_world("healthy"))
+    incidents = IncidentMemory(harness.store).list_incidents(vehicle_id="TRUCK-042")
+    assert incidents == []
+
+
+# --------------------------------------------------------- composite confidence
+def test_composite_confidence_present_and_bounded(harness) -> None:
+    d = harness.run(_world("healthy"))
+    c = d.composite_confidence
+    assert c is not None
+    assert 0.0 <= c.composite <= 1.0
+    assert c.evidence_quality == d.confidence
+    assert c.verifier_score == 1.0       # verifier passed
+    assert c.gate_cleanliness == 1.0     # nothing excluded
+    assert c.historical_reliability == 1.0  # first run for this vehicle, neutral
+
+
+def test_composite_confidence_penalizes_correlation_conflicts(harness) -> None:
+    d = harness.run(_world("compound_risk"))
+    c = d.composite_confidence
+    assert c.policy_compliance < 1.0     # compound_risk trips correlation conflicts
+    assert c.composite <= c.evidence_quality  # penalties never raise the score
+
+
+def test_composite_confidence_historical_reliability_drops_after_a_halt(harness) -> None:
+    harness.run(_world("compound_risk"))   # a halt in this vehicle's history
+    d2 = harness.run(_world("healthy"))
+    assert d2.composite_confidence.historical_reliability < 1.0

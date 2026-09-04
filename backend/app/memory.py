@@ -46,3 +46,19 @@ class TrendEngine:
 
         return VehicleTrend(vehicle_id=vehicle_id, signal=signal, points=points,
                             direction=direction, delta=delta)
+
+    def reliability_score(self, vehicle_id: str, limit: int = 10,
+                          exclude_run_id: str | None = None) -> float:
+        """This vehicle's recent non-halt rate — the `historical_reliability`
+        factor in `confidence.compute_composite()`. 1.0 (neutral, not
+        penalized) when there isn't enough history yet, e.g. the very first
+        run for a vehicle."""
+        decisions = self._store.list_recent_decisions(limit=max(limit * 3, 20))
+        relevant = [
+            d for d in decisions
+            if d.get("vehicle_id") == vehicle_id and d.get("run_id") != exclude_run_id
+        ][:limit]
+        if not relevant:
+            return 1.0
+        non_halts = sum(1 for d in relevant if d.get("controller_state") != "CRITICAL_HALT")
+        return round(non_halts / len(relevant), 3)

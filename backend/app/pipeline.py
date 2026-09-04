@@ -20,9 +20,12 @@ from .actions import ActionGateway
 from .agents import EnvironmentObserver, VehicleObserver
 from .audit import Audit, AuditEvent
 from .circuit_breaker import get_circuit_breaker
+from .confidence import compute_composite
 from .config import Settings, get_settings
 from .correlation import CorrelationEngine
 from .critic import Critic, build_critic
+from .events import EventBus, audit_sink
+from .memory import TrendEngine
 from .planner import Planner
 from .policy_packs import PolicyEngine, PolicyPack
 from .retry_engine import RetryEngine
@@ -38,7 +41,8 @@ from .world import WorldState
 class Harness:
     def __init__(self, store: Store, audit: Audit, gateway: ActionGateway,
                  critic: Critic, settings: Settings,
-                 policy_engine: PolicyEngine | None = None) -> None:
+                 policy_engine: PolicyEngine | None = None,
+                 events: EventBus | None = None) -> None:
         self._store = store
         self._audit = audit
         self._gateway = gateway
@@ -46,6 +50,14 @@ class Harness:
         self._settings = settings
         self._policy_engine = policy_engine or PolicyEngine(settings.active_policy_pack)
         self._circuit_breaker = get_circuit_breaker()
+        self._memory = TrendEngine(store)
+
+        # One Event Bus for the whole runtime. Audit subscribes to it (see
+        # build_harness) so every stage's event lands in the audit table
+        # exactly as before — the bus is a decoupling, not a behavior change.
+        self._events = events or EventBus()
+        self._events.subscribe(audit_sink(audit))
+
         self._supervisor = Supervisor(
             critic=critic, settings=settings,
             agent_a=VehicleObserver(), agent_b=EnvironmentObserver(),
@@ -53,7 +65,7 @@ class Harness:
             verifier=Verifier(), tool_registry=ToolRegistry(),
             circuit_breaker=self._circuit_breaker,
             retry_engine=RetryEngine(max_attempts=settings.critic_max_attempts),
-            audit=audit,
+            events=self._events,
         )
 
     def run(self, world: WorldState, vehicle_id: str | None = None,
@@ -62,11 +74,8 @@ class Harness:
         vehicle_id = vehicle_id or world.vehicle.vehicle_id
         pack: PolicyPack = self._policy_engine.get(policy_pack_key)
 
-        self._audit.record(
-            AuditEvent.RUN_STARTED,
-            {"scenario": world.scenario, "vehicle_id": vehicle_id, "policy_pack": pack.key},
-            run_id=run_id,
-        )
+        self._events.publish(AuditEvent.RUN_STARTED, run_id,
+                             {"scenario": world.scenario, "vehicle_id": vehicle_id, "policy_pack": pack.key})
 
         run_state: RunState = self._supervisor.execute(world, run_id, vehicle_id, pack)
 
@@ -88,12 +97,25 @@ class Harness:
             )
             escalation_id = ar.action_id
 
+        # Composite confidence needs Store (historical reliability), which is
+        # why it's computed here rather than inside the Supervisor.
+        historical_reliability = self._memory.reliability_score(vehicle_id, exclude_run_id=run_id)
+        composite = compute_composite(
+            evidence_quality=run_state.confidence,
+            verifier_valid=bool(run_state.verifier_result and run_state.verifier_result.valid),
+            trusted_count=len(run_state.trusted_evidence),
+            excluded_count=len(run_state.excluded_evidence),
+            conflict_count=len(run_state.correlation_conflicts),
+            historical_reliability=historical_reliability,
+        )
+
         decision = ControllerDecision(
             run_id=run_id, vehicle_id=vehicle_id,
             controller_state=run_state.controller_state or ControllerState.INSUFFICIENT_DATA,
             reason=run_state.decision_reason or "",
             confidence=run_state.confidence,
             confidence_breakdown=run_state.confidence_breakdown,
+            composite_confidence=composite,
             policy_pack=pack.key,
             risk_matrix=run_state.risk_matrix,
             critic_rejected=run_state.critic_rejected,
@@ -115,11 +137,14 @@ class Harness:
         )
 
         self._store.upsert_decision(decision.model_dump(mode="json"))
-        self._audit.record(AuditEvent.DECISION_MADE, {
+        self._events.publish(AuditEvent.DECISION_MADE, run_id, {
             "controller_state": decision.controller_state.value,
             "confidence": decision.confidence, "reason": decision.reason,
             "escalation_id": escalation_id,
-        }, run_id=run_id)
+        })
+        self._events.publish(AuditEvent.RUN_COMPLETED, run_id, {
+            "controller_state": decision.controller_state.value,
+        })
 
         return decision
 
@@ -146,6 +171,10 @@ class Harness:
     @property
     def policy_engine(self) -> PolicyEngine:
         return self._policy_engine
+
+    @property
+    def events(self) -> EventBus:
+        return self._events
 
 
 def build_harness(store: Store | None = None,

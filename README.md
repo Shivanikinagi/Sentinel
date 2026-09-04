@@ -65,6 +65,21 @@ Planner → Supervisor(agents → Trust Gate [4 sub-stages] → Correlation →
   (`GET /vehicles/{id}/trend`) instead of judging one snapshot.
 - **Metrics** (`metrics.py`) aggregates run outcomes, retries, evidence
   rejected, and action counts over everything persisted (`GET /metrics`).
+- **Event Bus** (`events.py`) — every stage publishes a typed event
+  (`RUN_STARTED`, `PLANNING_FINISHED`, `AGENT_UNAVAILABLE`, `GATE_EVALUATED`,
+  `RETRY_ATTEMPTED`, `CRITIC_ASSESSED`/`REJECTED`, `DECISION_MADE`,
+  `RUN_COMPLETED`, …) instead of calling Audit directly. Audit is one
+  subscriber (`audit_sink`), not the mechanism itself — the same vocabulary
+  still lands in the audit table unchanged. `GET /events/types` lists the
+  vocabulary; `GET /events/recent` reads the bus's own ring buffer.
+- **Incident Memory** (`incidents.py`) — distinct from Memory's routine signal
+  trend: a queryable history of past `CRITICAL_HALT` runs joined with how the
+  resulting action was resolved (`GET /incidents`).
+- **Composite Confidence** (`confidence.compute_composite`) — a second,
+  richer confidence view alongside the tested evidence-completeness formula:
+  `evidence quality × verifier score × gate cleanliness × policy compliance ×
+  historical reliability`, each factor independently observable, not
+  self-reported by the LLM.
 
 `pipeline.Harness` / `build_harness()` remain the public entry point — internally
 they now delegate to the Supervisor, so the whole runtime is a drop-in, not a
@@ -162,7 +177,8 @@ Fast, deterministic, and **network-free** (mock critic). Covers the gate, policy
 critic validation, confidence, controller table, action gateway, isolation
 guarantees, every pipeline scenario, the HTTP surface, and the Harness Runtime
 additions (Supervisor/RunState wiring, retry recovery, gate-stage breakdown,
-policy-pack switching, confidence breakdown, metrics, memory) — 89 tests.
+policy-pack switching, confidence breakdown, event bus, incident memory,
+composite confidence, metrics, memory) — 98 tests.
 
 ### Property-based / fuzz testing
 
@@ -212,14 +228,16 @@ backend/app/
   agents.py     world.py      config.py       schemas.py
   gate.py       policy.py     policy_packs.py critic.py      confidence.py
   correlation.py verifier.py  circuit_breaker.py tools.py    security.py
-  controller.py  actions.py   store.py        audit.py
+  controller.py  actions.py   store.py        audit.py       events.py
   planner.py     retry_engine.py  run_state.py supervisor.py pipeline.py  main.py
-  memory.py      metrics.py
+  memory.py      metrics.py   incidents.py
 backend/tests/  ...
 frontend/src/   App.tsx  components.tsx  api.ts  types.ts  styles.css
   pages/HarnessRuntime.tsx
-  components/HarnessRuntimeDiagram.tsx  HarnessMetricsPanel.tsx
+  components/HarnessRuntimeDiagram.tsx  SupervisorConsole.tsx  HarnessMetricsPanel.tsx
              PolicyPackCard.tsx  ConfidenceBreakdownCard.tsx  VehicleTrendCard.tsx
+             IncidentMemoryPanel.tsx  IsolationDemoCard.tsx  WorldStateCard.tsx
+             DecisionCertificate.tsx
 scripts/demo.py
 ```
 
@@ -230,6 +248,7 @@ scripts/demo.py
 `POST /actions/{id}/approve|reject` ·
 `POST /simulate/{scenario,kill-agent,corrupt-llm,stale-signal,transient-error,reset}` ·
 `GET /metrics` · `GET|POST /policy/packs|active` ·
-`GET /vehicles/{vehicle_id}/trend?signal=`
+`GET /vehicles/{vehicle_id}/trend?signal=` · `GET /incidents?vehicle_id=` ·
+`GET /events/types` · `GET /events/recent`
 
 Interactive docs at `http://localhost:8000/docs`.

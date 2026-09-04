@@ -15,10 +15,13 @@ from . import world as world_mod
 from .actions import ActionError
 from .audit import Audit, AuditEvent
 from .config import get_settings
+from .incidents import IncidentMemory
 from .memory import TrendEngine
 from .metrics import compute_metrics
 from .pipeline import build_harness
-from .schemas import ControllerDecision, HarnessMetrics, PolicyPackInfo, SimResponse, VehicleTrend
+from .schemas import (
+    ControllerDecision, HarnessMetrics, IncidentRecord, PolicyPackInfo, SimResponse, VehicleTrend,
+)
 from .security import probe_unauthorized_action
 from .store import get_store
 
@@ -224,6 +227,30 @@ def set_active_policy_pack(body: PolicyPackBody) -> PolicyPackInfo:
 @app.get("/vehicles/{vehicle_id}/trend", response_model=VehicleTrend)
 def vehicle_trend(vehicle_id: str, signal: str = "cargo_temperature", limit: int = 8) -> VehicleTrend:
     return TrendEngine(get_store()).trend(vehicle_id, signal, limit=limit)
+
+
+@app.get("/incidents", response_model=list[IncidentRecord])
+def list_incidents(vehicle_id: str | None = None, limit: int = 20) -> list[IncidentRecord]:
+    """Incident Memory — past CRITICAL_HALT runs and how they were resolved.
+    Distinct from /vehicles/{id}/trend (routine signal history)."""
+    return IncidentMemory(get_store()).list_incidents(vehicle_id=vehicle_id, limit=limit)
+
+
+@app.get("/events/types")
+def event_vocabulary() -> list[str]:
+    """The fixed event vocabulary the Harness Runtime's EventBus publishes —
+    the same strings that land in /audit, since Audit is one subscriber."""
+    return [v for k, v in vars(AuditEvent).items() if not k.startswith("_")]
+
+
+@app.get("/events/recent")
+def recent_events(limit: int = 50) -> list[dict]:
+    """The EventBus's own in-memory ring buffer (most-recent-first) — proof
+    the bus is live, independent of what Audit persisted."""
+    return [
+        {"event_type": e.event_type, "run_id": e.run_id, "ts": e.ts, "payload": e.payload}
+        for e in _harness.events.recent[:limit]
+    ]
 
 
 @app.post("/simulate/sensor-drift", response_model=SimResponse)

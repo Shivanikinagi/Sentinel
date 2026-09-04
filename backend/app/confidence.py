@@ -18,7 +18,13 @@ if that invariant is ever violated upstream — caught by property-based fuzzing
 """
 from __future__ import annotations
 
-from .schemas import ConfidenceBreakdown, SignalConfidence
+from .schemas import CompositeConfidence, ConfidenceBreakdown, SignalConfidence
+
+# Correlation conflicts are cold-chain/tyre-safety-specific physical checks, not
+# schema violations — each one found costs a fixed slice of policy compliance
+# rather than zeroing it out, since a single conflict is meaningful evidence but
+# not proof the whole read is untrustworthy.
+_CONFLICT_PENALTY = 0.25
 
 
 def compute(trusted_count: int, expected_count: int, contradiction: bool) -> float:
@@ -46,4 +52,45 @@ def compute_breakdown(
         contradiction_detected=contradiction, contradiction_penalty=penalty,
         corroborating_count=corroborating, confidence=conf,
         signals=signals or [],
+    )
+
+
+def compute_composite(
+    *, evidence_quality: float, verifier_valid: bool,
+    trusted_count: int, excluded_count: int, conflict_count: int,
+    historical_reliability: float = 1.0,
+) -> CompositeConfidence:
+    """Confidence as a product of independently observable system signals,
+    each in [0, 1] — not a single number, and never anything the LLM
+    self-reports:
+
+        composite = evidence_quality
+                   x verifier_score        (1.0 valid, 0.5 invalid)
+                   x gate_cleanliness      (trusted / (trusted + excluded))
+                   x policy_compliance     (1.0 - 0.25 per correlation conflict, floored at 0)
+                   x historical_reliability
+
+    `evidence_quality` is the SAME value as `ControllerDecision.confidence` —
+    this doesn't replace that tested formula, it's a second, richer view built
+    on top of it plus signals the base formula doesn't see (verifier outcome,
+    gate exclusion ratio, correlation conflicts, and the vehicle's recent
+    history)."""
+    verifier_score = 1.0 if verifier_valid else 0.5
+
+    total_evidence = trusted_count + excluded_count
+    gate_cleanliness = trusted_count / total_evidence if total_evidence > 0 else 1.0
+
+    policy_compliance = max(0.0, 1.0 - _CONFLICT_PENALTY * conflict_count)
+
+    composite = (evidence_quality * verifier_score * gate_cleanliness
+                * policy_compliance * historical_reliability)
+    composite = round(min(1.0, max(0.0, composite)), 3)
+
+    return CompositeConfidence(
+        evidence_quality=round(evidence_quality, 3),
+        verifier_score=verifier_score,
+        gate_cleanliness=round(gate_cleanliness, 3),
+        policy_compliance=round(policy_compliance, 3),
+        historical_reliability=round(historical_reliability, 3),
+        composite=composite,
     )

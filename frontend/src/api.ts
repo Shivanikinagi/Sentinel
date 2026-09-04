@@ -3,6 +3,7 @@ import type {
   AuditRecord,
   ControllerDecision,
   HarnessMetrics,
+  IncidentRecord,
   PolicyPackInfo,
   ProbeResult,
   VehicleTrend,
@@ -39,6 +40,17 @@ export const api = {
   vehicleTrend: (vehicleId: string, signal: string, limit = 8) =>
     req<VehicleTrend>(`/vehicles/${vehicleId}/trend?signal=${signal}&limit=${limit}`),
   transientError: () => req("/simulate/transient-error", { method: "POST" }),
+  incidents: (vehicleId?: string, limit = 20) =>
+    req<IncidentRecord[]>(`/incidents?limit=${limit}${vehicleId ? `&vehicle_id=${vehicleId}` : ""}`),
+  eventTypes: () => req<string[]>("/events/types"),
+  recentEvents: (limit = 50) =>
+    req<{ event_type: string; run_id: string | null; ts: number; payload: Record<string, unknown> }[]>(
+      `/events/recent?limit=${limit}`
+    ),
+  unauthorizedTool: () =>
+    req<{ blocked: boolean; vector?: string; outcome?: string; detail: string }>(
+      "/simulate/unauthorized-tool", { method: "POST" }
+    ),
 
   scenario: (name: string) =>
     req("/simulate/scenario", { method: "POST", body: JSON.stringify({ name }) }),
