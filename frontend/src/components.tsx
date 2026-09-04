@@ -47,8 +47,8 @@ export function ControllerBanner({
       <div className="banner idle">
         <div className="state-icon"><InfoIcon size={22} /></div>
         <div>
-          <div className="state">No check run yet</div>
-          <div className="reason">Press "Run check" to see the truck's current status.</div>
+          <div className="state">Ready to evaluate a fleet decision</div>
+          <div className="reason">Run a Healthy or Risk scenario to see the harness supervise agents, validate evidence, assess risk, and decide whether automation is safe.</div>
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ export function EvidencePanel({
       {agentDown ? (
         <div className="agent-down"><AlertTriangle size={14} /> Lost connection — no data this check</div>
       ) : rows.length === 0 ? (
-        <div className="empty">No data yet.</div>
+        <div className="empty">Run a check to pull live sensor readings.</div>
       ) : (
         rows.map((ev) => (
           <EvRow key={ev.evidence_id} ev={ev} excluded={excludedIds.has(ev.evidence_id)} technical={technical} />

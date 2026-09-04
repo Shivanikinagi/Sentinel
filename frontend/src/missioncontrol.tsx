@@ -15,10 +15,10 @@ import type {
 type Tone = "good" | "warn" | "bad" | "idle";
 
 function Node({
-  label, value, tone, processing,
-}: { label: string; value: string; tone: Tone; processing: boolean }) {
+  label, value, tone, processing, sweeping,
+}: { label: string; value: string; tone: Tone; processing: boolean; sweeping?: boolean }) {
   return (
-    <div className={`mc-node tone-${tone}${processing ? " processing" : ""}`}>
+    <div className={`mc-node tone-${tone}${processing ? " processing" : ""}${sweeping ? " sweeping" : ""}`}>
       <span className={`dot dot-${tone === "idle" ? "idle" : tone}`} />
       <div>
         <div className="mc-node-label">{label}</div>
@@ -65,15 +65,34 @@ export function LiveExecutionPanel({
   const actionValue = actions.length ? `${actions.length} awaiting approval` : "none needed";
 
   const [justUpdated, setJustUpdated] = useState(false);
+  const [sweepIndex, setSweepIndex] = useState(-1);
   const lastRunId = useRef<string | null>(null);
   useEffect(() => {
     if (decision && decision.run_id !== lastRunId.current) {
       lastRunId.current = decision.run_id;
       setJustUpdated(true);
-      const t2 = setTimeout(() => setJustUpdated(false), 1200);
-      return () => clearTimeout(t2);
+      const timers: ReturnType<typeof setTimeout>[] = [
+        setTimeout(() => setJustUpdated(false), 1200),
+      ];
+
+      // Choreographed reveal: the run itself is near-instant, but a judge
+      // needs to actually see "agents -> gate -> risk -> decision -> action"
+      // happen in order, not just a final color change.
+      setSweepIndex(0);
+      const STEP_MS = 220;
+      [1, 2, 3, 4].forEach((stage, i) => {
+        timers.push(setTimeout(() => setSweepIndex(stage), STEP_MS * (i + 1)));
+      });
+      timers.push(setTimeout(() => setSweepIndex(-1), STEP_MS * 5 + 150));
+
+      return () => timers.forEach(clearTimeout);
     }
-  }, [decision]);
+    // Keyed on run_id, not the whole decision object: FleetDataContext polls
+    // every ~1.5s and hands back a fresh object for the SAME run, which would
+    // otherwise re-run this effect mid-sweep and cancel the timers below via
+    // the cleanup function before the animation finishes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decision?.run_id]);
 
   return (
     <div className="mc-panel">
@@ -84,17 +103,17 @@ export function LiveExecutionPanel({
 
       <div className="mc-flow">
         <div className="mc-parallel-pair">
-          <Node label="Vehicle Agent" value={vehicleAgentValue} tone={vehicleAgentTone} processing={busy} />
-          <Node label="Environment Agent" value={envAgentValue} tone={envAgentTone} processing={busy} />
+          <Node label="Vehicle Agent" value={vehicleAgentValue} tone={vehicleAgentTone} processing={busy} sweeping={sweepIndex === 0} />
+          <Node label="Environment Agent" value={envAgentValue} tone={envAgentTone} processing={busy} sweeping={sweepIndex === 0} />
         </div>
-        <Connector flowing={busy} />
-        <Node label="Trust Gate" value={gateValue} tone={gateTone} processing={busy} />
-        <Connector flowing={busy} />
-        <Node label="Risk Assessment Engine" value={criticValue} tone={criticTone} processing={busy} />
-        <Connector flowing={busy} />
-        <Node label="Decision Authority" value={controllerValue} tone={controllerTone} processing={busy} />
-        <Connector flowing={busy} />
-        <Node label="Action Gateway" value={actionValue} tone={actionTone} processing={busy} />
+        <Connector flowing={busy || sweepIndex === 0} />
+        <Node label="Trust Gate" value={gateValue} tone={gateTone} processing={busy} sweeping={sweepIndex === 1} />
+        <Connector flowing={busy || sweepIndex === 1} />
+        <Node label="Risk Assessment Engine" value={criticValue} tone={criticTone} processing={busy} sweeping={sweepIndex === 2} />
+        <Connector flowing={busy || sweepIndex === 2} />
+        <Node label="Decision Authority" value={controllerValue} tone={controllerTone} processing={busy} sweeping={sweepIndex === 3} />
+        <Connector flowing={busy || sweepIndex === 3} />
+        <Node label="Action Gateway" value={actionValue} tone={actionTone} processing={busy} sweeping={sweepIndex === 4} />
       </div>
 
       <div className={`mc-controller-line${justUpdated ? " just-updated" : ""}`}>
@@ -104,7 +123,10 @@ export function LiveExecutionPanel({
             <span className="mc-controller-scenario">{world?.scenario ?? "—"}</span>
           </>
         ) : (
-          <span className="mc-controller-scenario">No run yet — press "Run check" to start the pipeline.</span>
+          <span className="mc-controller-scenario">
+            Ready to evaluate a fleet decision. Run a Healthy or Risk scenario to see the harness
+            supervise agents, validate evidence, assess risk, and decide whether automation is safe.
+          </span>
         )}
       </div>
     </div>

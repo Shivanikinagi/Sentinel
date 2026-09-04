@@ -1995,6 +1995,16 @@ button.ok { border-color: var(--emerald); color: var(--emerald); }
 @keyframes mc-node-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 .mc-node.processing .mc-node-value { animation: mc-node-pulse 0.9s ease-in-out infinite; }
 
+.mc-node {
+  border-radius: var(--radius-sm);
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.mc-node.sweeping {
+  background: var(--cyan-glow);
+  box-shadow: 0 0 0 1px var(--cyan), 0 0 16px var(--cyan-glow);
+}
+.mc-node.sweeping .mc-node-label { color: var(--cyan); }
+
 .mc-connector { display: flex; flex-direction: column; align-items: center; height: 18px; margin-left: 3px; }
 .mc-line { width: 2px; flex: 1; background: var(--border); }
 .mc-arrow { color: var(--muted-2); font-size: 10px; line-height: 1; margin-top: -2px; }
