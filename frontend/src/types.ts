@@ -6,6 +6,13 @@ export type ControllerState =
 export type FreshnessStatus = "fresh" | "stale" | "invalid";
 export type AgentSource = "agent_a" | "agent_b";
 
+export interface Provenance {
+  sensor_id: string;
+  ingestion_method: string;
+  raw_payload_hash: string;
+  transformations: string[];
+}
+
 export interface Evidence {
   evidence_id: string;
   run_id: string;
@@ -17,6 +24,7 @@ export interface Evidence {
   timestamp: string;
   age_seconds: number;
   status: FreshnessStatus;
+  provenance?: Provenance;
 }
 
 export interface RiskMatrix {
@@ -27,6 +35,20 @@ export interface RiskMatrix {
   reasoning_summary: string;
 }
 
+export interface VerifierResult {
+  valid: boolean;
+  reason?: string;
+  checks_passed: string[];
+  checks_failed: string[];
+}
+
+export interface DecisionStep {
+  step_name: string;
+  status: string;
+  detail: string;
+  duration_ms: number;
+}
+
 export interface DecisionTrace {
   evidence_ids: string[];
   evidence_snapshot: Evidence[];
@@ -34,6 +56,10 @@ export interface DecisionTrace {
   gate_notes: string[];
   agents_reporting: AgentSource[];
   agents_unavailable: AgentSource[];
+  correlation_conflicts?: string[];
+  verifier_result?: VerifierResult;
+  circuit_breaker_open?: boolean;
+  decision_chain?: DecisionStep[];
 }
 
 export interface ControllerDecision {

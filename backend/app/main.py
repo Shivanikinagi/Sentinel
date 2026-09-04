@@ -183,9 +183,55 @@ def sim_reset() -> SimResponse:
     return SimResponse(ok=True, message="world and store reset to healthy")
 
 
+@app.get("/tools")
+def list_tools() -> list[dict]:
+    return _harness.tool_registry.list_tools()
+
+
+@app.post("/simulate/sensor-drift", response_model=SimResponse)
+def sim_sensor_drift(cargo_temp: float = 14.5) -> SimResponse:
+    w = world_mod.get_state()
+    w.vehicle.cargo_temperature = cargo_temp
+    return SimResponse(ok=True, message=f"sensor drift injected: cargo_temperature set to {cargo_temp}°C")
+
+
+@app.post("/simulate/circuit-breaker", response_model=SimResponse)
+def sim_circuit_breaker() -> SimResponse:
+    _harness.circuit_breaker.record_failure()
+    _harness.circuit_breaker.record_failure()
+    _harness.circuit_breaker.record_failure()
+    return SimResponse(ok=True, message="LLM Circuit Breaker tripped to OPEN state (3 failures recorded)")
+
+
+@app.post("/simulate/emergency-override", response_model=SimResponse)
+def sim_emergency_override() -> SimResponse:
+    w = world_mod.get_state()
+    w.scenario = "compound_risk"
+    w.vehicle.cargo_temperature = 15.0
+    w.vehicle.cooling_status = 1.0
+    return SimResponse(ok=True, message="EMERGENCY HUMAN OVERRIDE ENGAGED: Halting automation immediately")
+
+
+
 @app.post("/simulate/unauthorized-action")
 def sim_unauthorized_action() -> dict:
     """Red-team probe: prove an agent has no callable path to an action."""
     result = probe_unauthorized_action()
     Audit(get_store()).record(AuditEvent.SECURITY_PROBE, result)
     return result
+
+
+@app.post("/simulate/unauthorized-tool")
+def sim_unauthorized_tool() -> dict:
+    """Red-team probe: prove Agent A cannot call Agent B tools."""
+    try:
+        _harness.tool_registry.execute_tool("agent_a", "get_environmental_telemetry")
+        return {"blocked": False, "detail": "Agent A called Agent B tool!"}
+    except Exception as exc:
+        return {
+            "blocked": True,
+            "vector": "agent_a_calling_agent_b_tool",
+            "outcome": "blocked",
+            "detail": str(exc),
+        }
+

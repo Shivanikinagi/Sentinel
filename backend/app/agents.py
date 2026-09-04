@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from .schemas import AgentSource, Evidence, FreshnessStatus, now_utc
+from hashlib import sha256
+from .schemas import AgentSource, Evidence, FreshnessStatus, Provenance, now_utc
 from .world import WorldState
 
 
@@ -18,10 +19,19 @@ class AgentUnavailable(Exception):
 
 def _fresh_evidence(run_id: str, vehicle_id: str, signal: str, value: float,
                     unit: str, source: AgentSource) -> Evidence:
+    sensor_id = f"snr_{source.value}_{signal}"
+    raw_str = f"{run_id}:{vehicle_id}:{signal}:{value}:{source.value}"
+    raw_hash = f"sha256:{sha256(raw_str.encode()).hexdigest()[:16]}"
+    provenance = Provenance(
+        sensor_id=sensor_id,
+        ingestion_method="direct_telematics_poll",
+        raw_payload_hash=raw_hash,
+        transformations=["unit_conversion", "timestamp_normalization"],
+    )
     return Evidence(
         run_id=run_id, vehicle_id=vehicle_id, signal=signal, value=float(value),
         unit=unit, source=source, timestamp=now_utc(), age_seconds=0.0,
-        status=FreshnessStatus.FRESH,
+        status=FreshnessStatus.FRESH, provenance=provenance,
     )
 
 

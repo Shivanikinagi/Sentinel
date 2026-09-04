@@ -24,6 +24,15 @@ class AgentSource(str, Enum):
     AGENT_B = "agent_b"  # environment observer
 
 
+class Provenance(BaseModel):
+    sensor_id: str
+    ingestion_method: str = "direct_telematics_poll"
+    raw_payload_hash: str
+    transformations: list[str] = Field(
+        default_factory=lambda: ["unit_conversion", "timestamp_normalization"]
+    )
+
+
 class Evidence(BaseModel):
     """Immutable observation. Corrections create new records, never edits."""
     evidence_id: str = Field(default_factory=lambda: f"ev_{uuid4().hex[:12]}")
@@ -36,6 +45,7 @@ class Evidence(BaseModel):
     timestamp: datetime = Field(default_factory=now_utc)
     age_seconds: float = 0.0
     status: FreshnessStatus = FreshnessStatus.FRESH
+    provenance: Optional[Provenance] = None
 
     @field_validator("timestamp")
     @classmethod
@@ -62,6 +72,20 @@ class RiskMatrix(BaseModel):
     reasoning_summary: str
 
 
+class VerifierResult(BaseModel):
+    valid: bool
+    reason: Optional[str] = None
+    checks_passed: list[str] = Field(default_factory=list)
+    checks_failed: list[str] = Field(default_factory=list)
+
+
+class DecisionStep(BaseModel):
+    step_name: str
+    status: str  # "OK" | "WARNING" | "FAILED" | "SKIPPED"
+    detail: str
+    duration_ms: float = 0.0
+
+
 class ControllerState(str, Enum):
     AUTO_OPTIMIZE = "AUTO_OPTIMIZE"
     INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
@@ -76,6 +100,10 @@ class DecisionTrace(BaseModel):
     gate_notes: list[str] = Field(default_factory=list)
     agents_reporting: list[AgentSource] = Field(default_factory=list)
     agents_unavailable: list[AgentSource] = Field(default_factory=list)
+    correlation_conflicts: list[str] = Field(default_factory=list)
+    verifier_result: Optional[VerifierResult] = None
+    circuit_breaker_open: bool = False
+    decision_chain: list[DecisionStep] = Field(default_factory=list)
 
 
 class ControllerDecision(BaseModel):
@@ -89,6 +117,7 @@ class ControllerDecision(BaseModel):
     critic_rejected: bool = False
     trace: DecisionTrace
     escalation_id: Optional[str] = None
+
 
 
 class SimResponse(BaseModel):
