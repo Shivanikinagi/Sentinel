@@ -1,6 +1,7 @@
 import { useFleet } from "../FleetDataContext";
 import { StatCard } from "../components";
 import { BarMini, Donut, Sparkline } from "../charts";
+import { DecisionFunnel } from "../components/DecisionFunnel";
 
 export default function Analytics() {
   const { history, audit, technical } = useFleet();
@@ -30,6 +31,8 @@ export default function Analytics() {
         <StatCard label="Security Checks Passed" value={`${Math.round(securityPassRate * 100)}%`} tone={securityPassRate === 1 ? "good" : "bad"} />
       </div>
 
+      <DecisionFunnel />
+
       <div className="dash-grid">
         <div className="panel">
           <h2>Confidence Over Time{technical && <span className="tech-caption"> · last {chronological.length} runs</span>}</h2>
@@ -44,9 +47,9 @@ export default function Analytics() {
           <h2>Decision Distribution</h2>
           <BarMini
             items={[
-              { label: "Auto-Optimize", value: counts.AUTO_OPTIMIZE, color: "var(--green)" },
+              { label: "Auto-Optimize", value: counts.AUTO_OPTIMIZE, color: "var(--emerald)" },
               { label: "Insufficient Data", value: counts.INSUFFICIENT_DATA, color: "var(--amber)" },
-              { label: "Critical Halt", value: counts.CRITICAL_HALT, color: "var(--red)" },
+              { label: "Critical Halt", value: counts.CRITICAL_HALT, color: "var(--rose)" },
             ]}
           />
         </div>
@@ -55,10 +58,10 @@ export default function Analytics() {
       <div className="panel">
         <h2>System Health</h2>
         <div className="gauge-row">
-          <Donut value={avgConfidence} color="var(--accent)" sub="Avg. confidence" />
-          <Donut value={counts.AUTO_OPTIMIZE / total} color="var(--green)" sub="Healthy decisions" />
+          <Donut value={avgConfidence} color="var(--cyan)" sub="Avg. confidence" />
+          <Donut value={counts.AUTO_OPTIMIZE / total} color="var(--emerald)" sub="Healthy decisions" />
           <Donut value={1 - criticRejections / total} color="var(--amber)" sub="Critic validity" />
-          <Donut value={securityPassRate} color="var(--green)" sub="Security integrity" />
+          <Donut value={securityPassRate} color="var(--emerald)" sub="Security integrity" />
         </div>
       </div>
     </div>

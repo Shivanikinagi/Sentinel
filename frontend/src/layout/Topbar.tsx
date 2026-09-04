@@ -57,31 +57,42 @@ export function Topbar({ onOpenGuide, onOpenExplainer }: TopbarProps) {
       </div>
 
       <div className="topbar-right">
-        {/* Big Red Button */}
+        {/* Big Red Button — deliberately isolated, not grouped */}
         <button className="btn-emergency-override" title="Big Red Button: Emergency Human Override" onClick={emergencyOverride}>
-          🚨 EMERGENCY OVERRIDE
+          🚨 OVERRIDE
         </button>
 
-        <button className="btn-presenter" onClick={onOpenGuide}>
-          ✨ Presenter Script
-        </button>
-
-        <button className="btn-explainer" title="Explain Current Decision" onClick={onOpenExplainer}>
-          🔍 Why This Decision?
-        </button>
-
-        <div className="timelapse-selector" title="Time-Lapse Fast-Forward">
-          <span className="timelapse-label font-mono">Speed:</span>
-          {[1, 5, 10].map((s) => (
-            <button key={s} className={timeLapseSpeed === s ? "active" : ""} onClick={() => setTimeLapseSpeed(s)}>
-              {s}x
-            </button>
-          ))}
+        <div className="topbar-group">
+          <span className="topbar-group-label">Present</span>
+          <button className="btn-presenter" onClick={onOpenGuide} title="Presenter Script">✨</button>
+          <button className="btn-explainer" onClick={onOpenExplainer} title="Why This Decision?">🔍</button>
         </div>
 
-        <span className="survival-counter font-mono" title="Anomalies Survived Without System Outage">
-          🛡️ Survived: {survivedFailuresCount}
-        </span>
+        <div className="topbar-group">
+          <span className="topbar-group-label">Status</span>
+          <div className="timelapse-selector" title="Time-Lapse Fast-Forward">
+            {[1, 5, 10].map((s) => (
+              <button key={s} className={timeLapseSpeed === s ? "active" : ""} onClick={() => setTimeLapseSpeed(s)}>
+                {s}x
+              </button>
+            ))}
+          </div>
+          <span className="survival-counter font-mono" title="Anomalies Survived Without System Outage">
+            🛡️ {survivedFailuresCount}
+          </span>
+          <span className="model-badge" title="Active Critic Backend">🤖 {backend}</span>
+          {state && (
+            <span className={`status-pill tone-${tone}`}>
+              <span className={`dot dot-${tone}`} />
+              {state}
+            </span>
+          )}
+          {actions.length > 0 && (
+            <span className="pending-badge animate-pulse" title="Human Approvals Required">
+              <BellIcon size={14} /> {actions.length}
+            </span>
+          )}
+        </div>
 
         <div className="mode-toggle">
           <button className={!technical ? "active" : ""} onClick={() => setMode(false)}>
@@ -91,23 +102,6 @@ export function Topbar({ onOpenGuide, onOpenExplainer }: TopbarProps) {
             Technical
           </button>
         </div>
-
-        <span className="model-badge" title="Active Critic Backend">
-          🤖 {backend}
-        </span>
-
-        {state && (
-          <span className={`status-pill tone-${tone}`}>
-            <span className={`dot dot-${tone}`} />
-            {state}
-          </span>
-        )}
-
-        {actions.length > 0 && (
-          <span className="pending-badge animate-pulse" title="Human Approvals Required">
-            <BellIcon size={14} /> {actions.length} Pending
-          </span>
-        )}
       </div>
     </header>
   );

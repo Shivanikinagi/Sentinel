@@ -22,13 +22,11 @@ export function IsolationDemoCard() {
 
   return (
     <div className="panel">
-      <h2>Isolation Proof</h2>
-      <p className="stat-sub" style={{ marginBottom: 10 }}>
-        Vehicle Agent has no code path to Environment Agent's tools — not a permission
-        check, a missing reference entirely.
-      </p>
-      <button className="warn" disabled={busy} onClick={run}>
-        <ZapIcon size={12} /> Try: Vehicle Agent → Environment Weather API
+      <h2 title="No code path to Environment Agent's tools — not a permission check, a missing reference entirely.">
+        Isolation Proof
+      </h2>
+      <button className="warn" disabled={busy} onClick={run} style={{ marginTop: 4 }}>
+        <ZapIcon size={12} /> Try: Vehicle → Environment API
       </button>
 
       {result && (

@@ -1,16 +1,24 @@
 import { useFleet } from "../FleetDataContext";
-import { CriticPanel, EvidencePanel } from "../components";
+import { CriticPanel, EvidencePanel, StatCard } from "../components";
+import { Sparkline } from "../charts";
 import { STATE_META, relativeTime, signalLabel } from "../humanize";
 import { TruckIcon } from "../icons";
 
 export default function VehicleDetails() {
-  const { decision, world, technical } = useFleet();
+  const { decision, history, world, technical } = useFleet();
   const sw = world?.switches;
   const state = decision?.controller_state ?? null;
   const tone = state ? STATE_META[state].tone : "idle";
 
   const telemetry = { ...(world?.vehicle ?? {}), ...(world?.environment ?? {}) };
   const entries = Object.entries(telemetry);
+
+  const trustedCount = decision ? decision.trace.evidence_snapshot.length - decision.trace.excluded_evidence_ids.length : 0;
+  const totalSignals = decision?.trace.evidence_snapshot.length ?? 0;
+  const freshnessPct = totalSignals ? Math.round((trustedCount / totalSignals) * 100) : 0;
+  const gateStatus = decision ? (decision.trace.excluded_evidence_ids.length ? "warn" : "good") : undefined;
+
+  const confidenceSeries = [...history].reverse().map((d) => d.confidence);
 
   return (
     <div className="page">
@@ -27,6 +35,23 @@ export default function VehicleDetails() {
           <div className="vehicle-header-time">Last check {decision ? relativeTime(decision.timestamp) : "—"}</div>
         </div>
       </div>
+
+      <div className="stat-grid">
+        <StatCard label="Trust Gate" value={gateStatus === "good" ? "Clean" : gateStatus === "warn" ? "Excluded" : "—"}
+                 tone={gateStatus as "good" | "warn" | undefined} sub={decision ? `${trustedCount}/${totalSignals} trusted` : "no run yet"} />
+        <StatCard label="Evidence Freshness" value={decision ? `${freshnessPct}%` : "—"}
+                 tone={freshnessPct === 100 ? "good" : freshnessPct >= 70 ? "warn" : freshnessPct ? "bad" : undefined} />
+        <StatCard label="Confidence" value={decision ? `${Math.round(decision.confidence * 100)}%` : "—"}
+                 tone={decision ? (decision.confidence >= 0.85 ? "good" : decision.confidence >= 0.5 ? "warn" : "bad") : undefined} />
+        <StatCard label="Policy Pack" value={decision?.policy_pack ?? "—"} />
+      </div>
+
+      {confidenceSeries.length >= 2 && (
+        <div className="panel">
+          <h2>Confidence History</h2>
+          <Sparkline points={confidenceSeries} width={480} height={70} />
+        </div>
+      )}
 
       <div className="panel">
         <h2>Live Telemetry{technical && <span className="tech-caption"> · raw world state</span>}</h2>

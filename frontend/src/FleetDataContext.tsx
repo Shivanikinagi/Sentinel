@@ -92,6 +92,27 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(t);
   }, [refresh, timeLapseSpeed]);
 
+  // A totally empty dashboard (all zeros, "no data yet" everywhere) reads as
+  // broken, not idle. Seed two healthy runs on first load if the backend has
+  // no history yet, so metrics/trend/analytics have something real to show.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const existing = await api.recentDecisions(1);
+        if (!cancelled && existing.length === 0) {
+          await api.run();
+          await api.run();
+        }
+      } catch {
+        /* backend not up yet — the regular poll will catch it later */
+      }
+      if (!cancelled) refresh();
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const guard = async (fn: () => Promise<unknown>, msg: string, incrementFailure = false) => {
     setBusy(true);
     try {

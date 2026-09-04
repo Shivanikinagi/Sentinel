@@ -267,7 +267,24 @@ code, pre, .font-mono, .step-value {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
+
+.topbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+.topbar-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted-2);
+  margin-right: 2px;
 }
 
 .btn-presenter {
@@ -883,23 +900,38 @@ code, pre, .font-mono, .step-value {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  padding: 14px 12px;
+  text-align: center;
+  cursor: help;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.runtime-box:hover { border-color: var(--cyan); transform: translateY(-1px); }
+
+.runtime-box-icon {
+  width: 32px; height: 32px; margin: 0 auto 8px;
+  border-radius: 9px; background: var(--cyan-glow); color: var(--cyan);
+  display: flex; align-items: center; justify-content: center;
 }
 
 .runtime-box-title {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   color: #fff;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  margin-bottom: 8px;
+  letter-spacing: 0.1px;
 }
 
-.runtime-box-desc {
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.4;
+.runtime-box-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+
+.runtime-tag {
+  font-size: 10.5px;
+  color: var(--emerald);
+  font-weight: 600;
 }
 
 .runtime-flow-note {
@@ -1217,6 +1249,55 @@ code, pre, .font-mono, .step-value {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 6px;
+}
+
+.funnel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.funnel-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.funnel-bar-track {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: center;
+}
+
+.funnel-bar {
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  border-radius: 999px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  transition: width 0.3s ease;
+}
+
+.funnel-count { font-weight: 800; font-size: 14px; color: #04121a; }
+
+.funnel-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.funnel-arrow {
+  color: var(--muted-2);
+  font-size: 12px;
+  margin: 2px 0;
 }
 
 .trend-select {
@@ -1611,9 +1692,10 @@ button.ok { border-color: var(--emerald); color: var(--emerald); }
 .panel-head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .panel-head-row h2 { margin: 0; }
 .panel h2 {
-  font-size: 13.5px; font-weight: 700; letter-spacing: -0.1px;
+  font-size: 15px; font-weight: 800; letter-spacing: -0.2px;
   color: var(--text); margin: 0 0 14px; display: flex; align-items: center; gap: 6px;
 }
+.panel .tech-caption { font-weight: 500; }
 .panel-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
 .panel-head h2 { margin: 0; }
 .panel-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }

@@ -33,11 +33,7 @@ export function PolicyPackCard() {
 
   return (
     <div className="panel">
-      <h2>Policy Engine</h2>
-      <p className="stat-sub" style={{ marginBottom: 0 }}>
-        Deterministic domain rules the Gate, Correlation Engine, and Risk Assessment Engine reason against.
-        {decision && <> Last run used <strong>{decision.policy_pack}</strong>.</>}
-      </p>
+      <h2>Policy Engine{decision && <span className="tech-caption"> · in use: {decision.policy_pack}</span>}</h2>
       <div className="policy-pack-grid">
         {packs.map((p) => (
           <div
@@ -45,13 +41,13 @@ export function PolicyPackCard() {
             className={`policy-pack-card${p.key === active ? " active" : ""}`}
             onClick={() => select(p.key)}
             role="button"
+            title={p.description}
           >
             <div className="policy-pack-card-title">
               {p.label}
               {p.key === active && <span className="badge badge-info">ACTIVE</span>}
             </div>
             <div className="policy-pack-card-domain">{p.domain}</div>
-            <div className="policy-pack-card-desc">{p.description}</div>
             <div className="policy-pack-signals">
               {p.required_signals.map((s) => (
                 <span key={s} className="chip fresh">{signalLabel(s)}</span>
