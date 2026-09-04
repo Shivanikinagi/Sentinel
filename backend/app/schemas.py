@@ -92,18 +92,40 @@ class ControllerState(str, Enum):
     CRITICAL_HALT = "CRITICAL_HALT"
 
 
+class SignalConfidence(BaseModel):
+    """One row of the confidence arithmetic: did this expected signal corroborate?"""
+    signal: str
+    trusted: bool
+    status: Optional[str] = None  # freshness status, or the exclusion reason category
+
+
+class ConfidenceBreakdown(BaseModel):
+    """The exact inputs to confidence.compute(), so the UI can show the
+    arithmetic (trusted / expected, minus the contradiction penalty) instead of
+    just the final rounded number."""
+    trusted_count: int
+    expected_count: int
+    contradiction_detected: bool
+    contradiction_penalty: int
+    corroborating_count: int
+    confidence: float
+    signals: list[SignalConfidence] = Field(default_factory=list)
+
+
 class DecisionTrace(BaseModel):
     """Why-this-decision record. Everything the Controller saw."""
     evidence_ids: list[str] = Field(default_factory=list)
     evidence_snapshot: list[Evidence] = Field(default_factory=list)
     excluded_evidence_ids: list[str] = Field(default_factory=list)
     gate_notes: list[str] = Field(default_factory=list)
+    gate_stage_results: list[DecisionStep] = Field(default_factory=list)
     agents_reporting: list[AgentSource] = Field(default_factory=list)
     agents_unavailable: list[AgentSource] = Field(default_factory=list)
     correlation_conflicts: list[str] = Field(default_factory=list)
     verifier_result: Optional[VerifierResult] = None
     circuit_breaker_open: bool = False
     decision_chain: list[DecisionStep] = Field(default_factory=list)
+    retries: list[DecisionStep] = Field(default_factory=list)
 
 
 class ControllerDecision(BaseModel):
@@ -113,10 +135,52 @@ class ControllerDecision(BaseModel):
     controller_state: ControllerState
     reason: str
     confidence: float  # computed in code, never self-reported by the LLM
+    confidence_breakdown: Optional[ConfidenceBreakdown] = None
+    policy_pack: str = "cold_chain"
     risk_matrix: Optional[RiskMatrix] = None
     critic_rejected: bool = False
     trace: DecisionTrace
     escalation_id: Optional[str] = None
+
+
+class PolicyPackInfo(BaseModel):
+    key: str
+    label: str
+    domain: str
+    description: str
+    required_signals: list[str]
+    signal_count: int
+
+
+class TrendPoint(BaseModel):
+    run_id: str
+    timestamp: datetime
+    value: float
+
+
+class VehicleTrend(BaseModel):
+    vehicle_id: str
+    signal: str
+    points: list[TrendPoint]
+    direction: Literal["rising", "falling", "flat", "insufficient_data"]
+    delta: Optional[float] = None
+
+
+class HarnessMetrics(BaseModel):
+    total_runs: int
+    auto_optimize: int
+    insufficient_data: int
+    critical_halt: int
+    critic_rejected: int
+    evidence_rejected: int
+    retries: int
+    circuit_breaker_trips: int
+    pending_actions: int
+    executed_actions: int
+    rejected_actions: int
+    avg_confidence: float
+    avg_latency_ms: float
+    success_rate: float
 
 
 

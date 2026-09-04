@@ -18,6 +18,7 @@ class AuditEvent:
     GATE_EVALUATED = "gate_evaluated"
     CRITIC_ASSESSED = "critic_assessed"
     CRITIC_REJECTED = "critic_rejected"
+    RETRY_ATTEMPTED = "retry_attempted"
     DECISION_MADE = "decision_made"
     ACTION_REQUESTED = "action_requested"
     ACTION_APPROVED = "action_approved"

@@ -15,8 +15,10 @@ from . import world as world_mod
 from .actions import ActionError
 from .audit import Audit, AuditEvent
 from .config import get_settings
+from .memory import TrendEngine
+from .metrics import compute_metrics
 from .pipeline import build_harness
-from .schemas import ControllerDecision, SimResponse
+from .schemas import ControllerDecision, HarnessMetrics, PolicyPackInfo, SimResponse, VehicleTrend
 from .security import probe_unauthorized_action
 from .store import get_store
 
@@ -53,6 +55,10 @@ class RejectBody(BaseModel):
     reason: str
 
 
+class PolicyPackBody(BaseModel):
+    key: str
+
+
 # --------------------------------------------------------------------------- core
 @app.get("/health")
 def health() -> dict:
@@ -62,8 +68,8 @@ def health() -> dict:
 
 
 @app.post("/runs", response_model=ControllerDecision)
-def trigger_run() -> ControllerDecision:
-    return _harness.run(world_mod.get_state())
+def trigger_run(policy_pack: str | None = None) -> ControllerDecision:
+    return _harness.run(world_mod.get_state(), policy_pack_key=policy_pack)
 
 
 @app.get("/decisions", response_model=list[ControllerDecision])
@@ -188,6 +194,38 @@ def list_tools() -> list[dict]:
     return _harness.tool_registry.list_tools()
 
 
+# ---------------------------------------------------------- Harness Runtime API
+@app.get("/metrics", response_model=HarnessMetrics)
+def get_metrics() -> HarnessMetrics:
+    """Observability — Harness Runtime metrics aggregated over everything
+    persisted so far: run outcomes, retries, evidence rejected, actions."""
+    return compute_metrics(get_store())
+
+
+@app.get("/policy/packs", response_model=list[PolicyPackInfo])
+def list_policy_packs() -> list[PolicyPackInfo]:
+    return _harness.policy_engine.list_packs()
+
+
+@app.get("/policy/active", response_model=PolicyPackInfo)
+def get_active_policy_pack() -> PolicyPackInfo:
+    return _harness.policy_engine.active().info()
+
+
+@app.post("/policy/active", response_model=PolicyPackInfo)
+def set_active_policy_pack(body: PolicyPackBody) -> PolicyPackInfo:
+    try:
+        pack = _harness.policy_engine.set_active(body.key)
+    except KeyError:
+        raise HTTPException(400, f"unknown policy pack '{body.key}'")
+    return pack.info()
+
+
+@app.get("/vehicles/{vehicle_id}/trend", response_model=VehicleTrend)
+def vehicle_trend(vehicle_id: str, signal: str = "cargo_temperature", limit: int = 8) -> VehicleTrend:
+    return TrendEngine(get_store()).trend(vehicle_id, signal, limit=limit)
+
+
 @app.post("/simulate/sensor-drift", response_model=SimResponse)
 def sim_sensor_drift(cargo_temp: float = 14.5) -> SimResponse:
     w = world_mod.get_state()
@@ -201,6 +239,18 @@ def sim_circuit_breaker() -> SimResponse:
     _harness.circuit_breaker.record_failure()
     _harness.circuit_breaker.record_failure()
     return SimResponse(ok=True, message="LLM Circuit Breaker tripped to OPEN state (3 failures recorded)")
+
+
+@app.post("/simulate/transient-error", response_model=SimResponse)
+def sim_transient_error() -> SimResponse:
+    """Demo hook for the RetryEngine: the Risk Assessment Engine's NEXT call
+    fails once with a simulated network error, so the retry (and its
+    "Retry #1" timeline row) can be shown recovering live."""
+    backend = getattr(_harness.critic, "backend", None)
+    if hasattr(backend, "trigger_transient_error"):
+        backend.trigger_transient_error()
+        return SimResponse(ok=True, message="Risk Assessment Engine will fail once on the next run, then retry and recover")
+    return SimResponse(ok=False, message="transient-error injection only supported on the mock critic backend")
 
 
 @app.post("/simulate/emergency-override", response_model=SimResponse)

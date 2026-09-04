@@ -3,11 +3,12 @@ import { useFleet } from "../FleetDataContext";
 import { STATE_META } from "../humanize";
 import {
   ActivityIcon, BarChartIcon, ClipboardIcon, FlaskIcon, GridIcon,
-  SearchCarIcon, SettingsIcon, ShieldIcon,
+  SearchCarIcon, SettingsIcon, ShieldIcon, ZapIcon,
 } from "../icons";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: GridIcon, end: true },
+  { to: "/runtime", label: "Harness Runtime", icon: ZapIcon },
   { to: "/vehicle", label: "Vehicle Explorer", icon: SearchCarIcon },
   { to: "/pipeline", label: "Harness Pipeline", icon: ActivityIcon },
   { to: "/simulation", label: "Simulation Lab", icon: FlaskIcon },

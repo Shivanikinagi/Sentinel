@@ -54,12 +54,30 @@ export interface DecisionTrace {
   evidence_snapshot: Evidence[];
   excluded_evidence_ids: string[];
   gate_notes: string[];
+  gate_stage_results?: DecisionStep[];
   agents_reporting: AgentSource[];
   agents_unavailable: AgentSource[];
   correlation_conflicts?: string[];
   verifier_result?: VerifierResult;
   circuit_breaker_open?: boolean;
   decision_chain?: DecisionStep[];
+  retries?: DecisionStep[];
+}
+
+export interface SignalConfidence {
+  signal: string;
+  trusted: boolean;
+  status?: string | null;
+}
+
+export interface ConfidenceBreakdown {
+  trusted_count: number;
+  expected_count: number;
+  contradiction_detected: boolean;
+  contradiction_penalty: number;
+  corroborating_count: number;
+  confidence: number;
+  signals: SignalConfidence[];
 }
 
 export interface ControllerDecision {
@@ -69,10 +87,52 @@ export interface ControllerDecision {
   controller_state: ControllerState;
   reason: string;
   confidence: number;
+  confidence_breakdown?: ConfidenceBreakdown | null;
+  policy_pack: string;
   risk_matrix: RiskMatrix | null;
   critic_rejected: boolean;
   trace: DecisionTrace;
   escalation_id: string | null;
+}
+
+export interface PolicyPackInfo {
+  key: string;
+  label: string;
+  domain: string;
+  description: string;
+  required_signals: string[];
+  signal_count: number;
+}
+
+export interface TrendPoint {
+  run_id: string;
+  timestamp: string;
+  value: number;
+}
+
+export interface VehicleTrend {
+  vehicle_id: string;
+  signal: string;
+  points: TrendPoint[];
+  direction: "rising" | "falling" | "flat" | "insufficient_data";
+  delta: number | null;
+}
+
+export interface HarnessMetrics {
+  total_runs: number;
+  auto_optimize: number;
+  insufficient_data: number;
+  critical_halt: number;
+  critic_rejected: number;
+  evidence_rejected: number;
+  retries: number;
+  circuit_breaker_trips: number;
+  pending_actions: number;
+  executed_actions: number;
+  rejected_actions: number;
+  avg_confidence: number;
+  avg_latency_ms: number;
+  success_rate: number;
 }
 
 export interface ActionRequest {

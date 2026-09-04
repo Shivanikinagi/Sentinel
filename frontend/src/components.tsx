@@ -147,7 +147,7 @@ const RISK_LABEL: Record<string, string> = { LOW: "Low risk", MEDIUM: "Some risk
 export function CriticPanel({ d, technical }: { d: ControllerDecision | null; technical: boolean }) {
   return (
     <div className="panel">
-      <h2>AI Risk Assessment{technical && <span className="tech-caption"> · Consensus Critic</span>}</h2>
+      <h2>AI Risk Assessment{technical && <span className="tech-caption"> · Risk Assessment Engine</span>}</h2>
       {!d ? (
         <div className="empty">—</div>
       ) : d.critic_rejected ? (
@@ -194,21 +194,30 @@ export function PendingActions({
       {actions.length === 0 ? (
         <div className="empty">Nothing waiting on you right now.</div>
       ) : (
-        actions.map((a) => (
-          <div className="action-card" key={a.action_id}>
-            <div className="title">{actionTypeLabel(a.action_type)}</div>
-            <div className="why">{humanizeReason(a.reason)}</div>
-            {technical && <div className="tech-caption">{a.action_type} · tier {a.tier} · {a.reason}</div>}
-            <div className="btns">
-              <button className="ok" onClick={() => onApprove(a.action_id)}>
-                <CheckCircle size={14} /> Approve
-              </button>
-              <button className="danger" onClick={() => onReject(a.action_id)}>
-                <XCircle size={14} /> Reject
-              </button>
-            </div>
+        <>
+          <div className="stepper" style={{ marginBottom: 14 }}>
+            <Step label="Critical Halt" status="bad" value="Automation stopped" />
+            <span className="arrow">→</span>
+            <Step label="Human Approval Required" status="warn" value={`${actions.length} pending`} />
+            <span className="arrow">→</span>
+            <Step label="Escalation Record" status="idle" value="created on approval" />
           </div>
-        ))
+          {actions.map((a) => (
+            <div className="action-card" key={a.action_id}>
+              <div className="title">{actionTypeLabel(a.action_type)}</div>
+              <div className="why">{humanizeReason(a.reason)}</div>
+              {technical && <div className="tech-caption">{a.action_type} · tier {a.tier} · {a.reason}</div>}
+              <div className="btns">
+                <button className="ok" onClick={() => onApprove(a.action_id)}>
+                  <CheckCircle size={14} /> Approve
+                </button>
+                <button className="danger" onClick={() => onReject(a.action_id)}>
+                  <XCircle size={14} /> Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </>
       )}
     </div>
   );

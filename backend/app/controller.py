@@ -8,11 +8,12 @@ on INSUFFICIENT_DATA.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from . import confidence, policy
 from .critic import CriticResult
 from .gate import GateResult
-from .schemas import ControllerState, RiskLevel, RiskMatrix
+from .schemas import ConfidenceBreakdown, ControllerState, RiskLevel, RiskMatrix, SignalConfidence
 
 
 @dataclass
@@ -23,19 +24,32 @@ class ControllerOutcome:
     request_action: bool = False
     risk_matrix: RiskMatrix | None = None
     critic_rejected: bool = False
+    confidence_breakdown: ConfidenceBreakdown | None = None
 
 
-def decide(gate: GateResult, critic: CriticResult) -> ControllerOutcome:
+def decide(gate: GateResult, critic: CriticResult, policy_pack: Any = None) -> ControllerOutcome:
+    pol = policy_pack or policy
     matrix = critic.matrix
     contradiction = bool(matrix and matrix.contradiction_detected)
-    conf = confidence.compute(
-        len(gate.trusted), policy.expected_signal_count(), contradiction
+    expected = pol.expected_signal_count()
+    conf = confidence.compute(len(gate.trusted), expected, contradiction)
+
+    trusted_signals = {e.signal for e in gate.trusted}
+    all_signals = sorted(getattr(pol, "signal_source", None) or policy.SIGNAL_SOURCE)
+    breakdown = confidence.compute_breakdown(
+        len(gate.trusted), expected, contradiction,
+        signals=[
+            SignalConfidence(signal=s, trusted=s in trusted_signals,
+                             status="trusted" if s in trusted_signals else "missing_or_excluded")
+            for s in all_signals
+        ],
     )
 
     def outcome(state: ControllerState, reason: str, request: bool = False):
         return ControllerOutcome(
             state=state, reason=reason, confidence=conf, request_action=request,
             risk_matrix=matrix, critic_rejected=critic.rejected,
+            confidence_breakdown=breakdown,
         )
 
     # 1) An observer is down -> we do not have both halves of the picture.

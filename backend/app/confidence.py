@@ -18,6 +18,8 @@ if that invariant is ever violated upstream — caught by property-based fuzzing
 """
 from __future__ import annotations
 
+from .schemas import ConfidenceBreakdown, SignalConfidence
+
 
 def compute(trusted_count: int, expected_count: int, contradiction: bool) -> float:
     if expected_count <= 0:
@@ -26,3 +28,22 @@ def compute(trusted_count: int, expected_count: int, contradiction: bool) -> flo
     contradicted = 2 if contradiction else 0
     corroborating = max(0, trusted_count - contradicted)
     return round(corroborating / expected_count, 2)
+
+
+def compute_breakdown(
+    trusted_count: int, expected_count: int, contradiction: bool,
+    signals: list[SignalConfidence] | None = None,
+) -> ConfidenceBreakdown:
+    """Same formula as `compute()`, but returns every intermediate value so the
+    UI can show the arithmetic (trusted/expected minus the contradiction
+    penalty) instead of just the rounded result."""
+    conf = compute(trusted_count, expected_count, contradiction)
+    clamped = min(trusted_count, expected_count) if expected_count > 0 else 0
+    penalty = 2 if contradiction else 0
+    corroborating = max(0, clamped - penalty)
+    return ConfidenceBreakdown(
+        trusted_count=trusted_count, expected_count=expected_count,
+        contradiction_detected=contradiction, contradiction_penalty=penalty,
+        corroborating_count=corroborating, confidence=conf,
+        signals=signals or [],
+    )

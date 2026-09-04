@@ -1,4 +1,5 @@
 import { useFleet } from "../FleetDataContext";
+import { signalLabel } from "../humanize";
 
 interface DecisionExplainerModalProps {
   isOpen: boolean;
@@ -37,11 +38,15 @@ export function DecisionExplainerModal({ isOpen, onClose }: DecisionExplainerMod
           </div>
 
           <div className="explainer-section">
-            <h4>2. LLM Critic Reasoning ({backend})</h4>
+            <h4>2. Risk Assessment Engine Reasoning ({backend})</h4>
             <div className="explainer-box">
+              <p><strong>Policy Pack:</strong> {decision.policy_pack}</p>
               <p><strong>Risk Level:</strong> {decision.risk_matrix?.risk_level ?? "REJECTED"}</p>
               <p><strong>Contradiction Detected:</strong> {decision.risk_matrix?.contradiction_detected ? "YES ⚠️" : "NO ✓"}</p>
               <p><strong>Reasoning Summary:</strong> {decision.risk_matrix?.reasoning_summary ?? "Output rejected by schema/verifier"}</p>
+              {decision.trace.retries && decision.trace.retries.length > 0 && (
+                <p><strong>Retries:</strong> {decision.trace.retries.length} transient failure(s) recovered before this result</p>
+              )}
             </div>
           </div>
 
@@ -53,8 +58,31 @@ export function DecisionExplainerModal({ isOpen, onClose }: DecisionExplainerMod
             </div>
           </div>
 
+          {decision.confidence_breakdown && (
+            <div className="explainer-section">
+              <h4>4. Confidence Arithmetic</h4>
+              <div className="explainer-box font-mono" style={{ fontSize: "12px" }}>
+                <p>
+                  ({decision.confidence_breakdown.trusted_count} trusted
+                  {decision.confidence_breakdown.contradiction_penalty > 0
+                    ? ` − ${decision.confidence_breakdown.contradiction_penalty} contradiction penalty`
+                    : ""}
+                  ) ÷ {decision.confidence_breakdown.expected_count} expected
+                  = <strong>{Math.round(decision.confidence_breakdown.confidence * 100)}%</strong>
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                  {decision.confidence_breakdown.signals.map((s) => (
+                    <span key={s.signal} className={`chip ${s.trusted ? "fresh" : "invalid"}`}>
+                      {s.trusted ? "✓" : "✕"} {signalLabel(s.signal)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="explainer-section">
-            <h4>4. Evidence Grounding Snapshot ({decision.trace.evidence_snapshot.length} signals)</h4>
+            <h4>5. Evidence Grounding Snapshot ({decision.trace.evidence_snapshot.length} signals)</h4>
             <div className="explainer-box font-mono" style={{ fontSize: "11px" }}>
               {decision.trace.evidence_snapshot.map((ev) => (
                 <div key={ev.evidence_id}>

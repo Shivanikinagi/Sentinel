@@ -4,6 +4,7 @@ import { AppLayout } from "./layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import VehicleDetails from "./pages/VehicleDetails";
 import HarnessPipeline from "./pages/HarnessPipeline";
+import HarnessRuntime from "./pages/HarnessRuntime";
 import SimulationLab from "./pages/SimulationLab";
 import AuditLogs from "./pages/AuditLogs";
 import Analytics from "./pages/Analytics";
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/vehicle" element={<VehicleDetails />} />
             <Route path="/pipeline" element={<HarnessPipeline />} />
+            <Route path="/runtime" element={<HarnessRuntime />} />
             <Route path="/simulation" element={<SimulationLab />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/analytics" element={<Analytics />} />

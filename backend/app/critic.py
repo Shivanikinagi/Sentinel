@@ -23,9 +23,9 @@ from typing import Any, Protocol
 import httpx
 from pydantic import ValidationError
 
-from . import policy
 from .config import Settings, get_settings
-from .schemas import Evidence, RiskLevel, RiskMatrix
+from .policy_packs import PolicyPack, COLD_CHAIN
+from .schemas import Evidence, RiskMatrix
 
 
 @dataclass
@@ -87,64 +87,32 @@ _MALFORMED_PAYLOAD: dict[str, Any] = {
 
 # ------------------------------------------------------------------- mock backend
 class MockCritic:
-    """Deterministic Critic derived from the policy thresholds.
-
-    Produces a schema-shaped dict (so it exercises the same validation path as a
-    real model) using ONLY the trusted evidence handed to it.
-    """
+    """Deterministic Critic. Reasoning is delegated to the active policy pack's
+    `reasoning_fn` (default: cold_chain) — this class produces a schema-shaped
+    dict (so it exercises the same validation path as a real model) and adds a
+    one-shot transient-failure switch for demoing the RetryEngine."""
     name = "mock"
 
+    def __init__(self, pack: PolicyPack = COLD_CHAIN) -> None:
+        self._pack = pack
+        self._force_error_once = False
+
+    def set_pack(self, pack: PolicyPack) -> None:
+        """Let the Supervisor swap the active policy pack's reasoning in for
+        THIS run, since a per-run pack override (e.g. tyre_safety) must change
+        not just what the gate trusts but how the critic reasons about it."""
+        self._pack = pack
+
+    def trigger_transient_error(self) -> None:
+        """Demo hook: the NEXT produce() call raises once, simulating a network
+        blip, so the RetryEngine's second attempt can recover live on stage."""
+        self._force_error_once = True
+
     def produce(self, evidence: list[Evidence]) -> dict[str, Any]:
-        vals = {ev.signal: ev.value for ev in evidence}
-        cargo = vals.get("cargo_temperature")
-        cooling = vals.get("cooling_status")
-        ambient = vals.get("ambient_temperature")
-        dwell = vals.get("dwell_minutes")
-
-        factors: list[str] = []
-        contradiction = False
-
-        if cargo is not None:
-            if cargo > policy.CARGO_CRITICAL_C:
-                factors.append("cargo_temperature_critical")
-            elif cargo > policy.CARGO_WARN_C:
-                factors.append("cargo_temperature_rising")
-            if cooling == policy.COOLING_ON and cargo > policy.CARGO_TARGET_MAX_C:
-                contradiction = True
-                factors.append("cooling_on_but_cargo_warm")
-        if ambient is not None and ambient >= policy.AMBIENT_HIGH_C:
-            factors.append("high_ambient_temperature")
-        if dwell is not None and dwell >= policy.DWELL_LONG_MIN:
-            factors.append("extended_dwell")
-
-        if contradiction or (cargo is not None and cargo > policy.CARGO_CRITICAL_C):
-            level = RiskLevel.HIGH
-        elif factors:
-            level = RiskLevel.MEDIUM
-        else:
-            level = RiskLevel.LOW
-
-        missing = [s for s in policy.required_signals() if s not in vals]
-
-        summary = _mock_summary(level, contradiction, factors, cargo, cooling)
-        return {
-            "risk_level": level.value,
-            "contradiction_detected": contradiction,
-            "risk_factors": factors,
-            "missing_evidence": missing,
-            "reasoning_summary": summary,
-        }
-
-
-def _mock_summary(level, contradiction, factors, cargo, cooling) -> str:
-    if contradiction:
-        return (
-            f"Cooling reports ON yet cargo is {cargo}C, above the {policy.CARGO_TARGET_MAX_C}C "
-            f"cold-chain band — physically inconsistent. Risk {level.value}."
-        )
-    if factors:
-        return f"Elevated risk from: {', '.join(factors)}. Risk {level.value}."
-    return "All trusted signals within cold-chain bounds. Risk LOW."
+        if self._force_error_once:
+            self._force_error_once = False
+            raise RuntimeError("simulated transient network error")
+        return self._pack.reasoning_fn(evidence)
 
 
 # ------------------------------------------------------------- openrouter backend
@@ -235,9 +203,9 @@ def _extract_json_object(content: str) -> dict[str, Any]:
 
 
 # -------------------------------------------------------------------- factory
-def build_critic(settings: Settings | None = None) -> Critic:
+def build_critic(settings: Settings | None = None, pack: PolicyPack = COLD_CHAIN) -> Critic:
     settings = settings or get_settings()
     backend: CriticBackend = (
-        MockCritic() if settings.use_mock_critic else OpenRouterCritic(settings)
+        MockCritic(pack) if settings.use_mock_critic else OpenRouterCritic(settings)
     )
     return Critic(backend)

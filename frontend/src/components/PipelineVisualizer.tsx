@@ -84,8 +84,8 @@ export function PipelineVisualizer() {
         <div className={`pipeline-step step-${criticStatus}`}>
           <div className="step-badge">LAYER 3</div>
           <div className="step-card">
-            <div className="step-title">Consensus Critic</div>
-            <div className="step-sub">LLM OpenRouter Reasoner</div>
+            <div className="step-title">Risk Assessment Engine</div>
+            <div className="step-sub">LLM Reasoner → Verifier → Consensus</div>
             <div className="step-value">
               {criticRejected
                 ? "❌ Schema Rejection"

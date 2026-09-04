@@ -85,7 +85,7 @@ export function LiveExecutionPanel({
         <Connector flowing={busy} />
         <Node label="Trust Gate" value={gateValue} tone={gateTone} processing={busy} />
         <Connector flowing={busy} />
-        <Node label="Consensus Critic" value={criticValue} tone={criticTone} processing={busy} />
+        <Node label="Risk Assessment Engine" value={criticValue} tone={criticTone} processing={busy} />
         <Connector flowing={busy} />
         <Node label="Deterministic Controller" value={controllerValue} tone={controllerTone} processing={busy} />
         <Connector flowing={busy} />

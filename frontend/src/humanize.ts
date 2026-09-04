@@ -38,6 +38,24 @@ export function signalValue(signal: string, value: number, unit: string): string
   return `${value} ${unit}`;
 }
 
+export const STEP_LABELS: Record<string, string> = {
+  telemetry_observation: "Telemetry Observation",
+  trust_gate: "Trust Gate",
+  schema_validator: "Schema Validator",
+  freshness_checker: "Freshness Checker",
+  provenance_checker: "Provenance Checker",
+  evidence_normalizer: "Evidence Normalizer",
+  evidence_correlation: "Evidence Correlation",
+  risk_assessment_engine: "Risk Assessment Engine",
+  retry_risk_assessment_engine: "Retry — Risk Assessment Engine",
+  verifier_subsystem: "Verifier Sub-System",
+  deterministic_controller: "Deterministic Controller",
+}
+
+export function stepLabel(stepName: string): string {
+  return STEP_LABELS[stepName] ?? prettify(stepName);
+}
+
 export const SOURCE_META: Record<string, { title: string; sub: string }> = {
   agent_a: { title: "Truck Sensors", sub: "Cargo, tyres, cooling, speed" },
   agent_b: { title: "Route Conditions", sub: "Weather, traffic, temperature" },

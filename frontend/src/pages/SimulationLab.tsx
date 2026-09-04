@@ -5,7 +5,7 @@ import { PlayIcon, RefreshIcon, ZapIcon } from "../icons";
 export default function SimulationLab() {
   const {
     decision, world, technical, busy, runNow, setScenario, killAgent, corruptLlm,
-    staleSignal, reset, probe, runProbe,
+    staleSignal, reset, probe, runProbe, triggerTransientError,
   } = useFleet();
 
   const sw = world?.switches;
@@ -51,6 +51,9 @@ export default function SimulationLab() {
                 onClick={() => staleSignal(sw?.force_stale_signal ? null : "cargo_temperature")}
               >
                 {sw?.force_stale_signal ? "Clear old data" : "Simulate old data"}
+              </button>
+              <button className="warn" disabled={busy} onClick={triggerTransientError}>
+                <ZapIcon size={12} /> Simulate network blip (Retry Engine)
               </button>
             </div>
           </div>

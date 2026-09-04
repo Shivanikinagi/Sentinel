@@ -20,21 +20,55 @@ LLM call — and each guarantee is backed by a **test**, not a claim:
 
 | Layer | Module | Guarantee |
 |---|---|---|
-| **Intelligence** | `agents.py`, `critic.py` | Agents isolated by code; the Critic sees only structured evidence |
+| **Intelligence** | `agents.py`, `critic.py` | Agents isolated by code; the Risk Assessment Engine sees only structured evidence |
 | **Evidence** | `gate.py` | Freshness + provenance + completeness; stale/invalid excluded |
-| **Policy** | `policy.py` | Deterministic cold-chain thresholds (OPA seam) |
+| **Policy** | `policy_packs.py` | Pluggable domain policy packs (Cold Chain, Tyre Safety); deterministic thresholds, no hardcoded single domain |
 | **Decision** | `controller.py`, `confidence.py` | 3-state machine; confidence computed in code, never by the LLM |
 | **Authority** | `actions.py` | Action Gateway with human-in-the-loop approval (Layer 2) |
 
 - No LLM output reaches the Controller without passing strict `RiskMatrix`
   validation (`extra="forbid"`). Malformed output is **rejected**, not coerced.
-- No agent or Critic has a code path to execute a fleet action — proven in
-  `tests/test_isolation.py`.
+- No agent or Risk Assessment Engine has a code path to execute a fleet action —
+  proven in `tests/test_isolation.py`.
 - A killed agent or a corrupt model degrades to `INSUFFICIENT_DATA`; the harness
   stays up.
 - SQLite append-only audit log survives a mid-demo restart and makes replay cheap.
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full design.
+### The Harness Runtime
+
+Everything above plugs into one runtime, not a bare function call
+(`backend/app/supervisor.py`, `run_state.py`, `planner.py`, `retry_engine.py`,
+`policy_packs.py`, `memory.py`):
+
+```
+Planner → Supervisor(agents → Trust Gate [4 sub-stages] → Correlation →
+  Risk Assessment Engine [retry + circuit breaker] → Verifier →
+  Deterministic Controller)
+→ Harness (persists evidence + decision, requests an action on CRITICAL_HALT)
+→ Store / Action Gateway / Audit
+```
+
+- **Supervisor** starts each agent, times every stage, retries a failed Risk
+  Assessment Engine call, and assembles the execution trace.
+- **RunState** (`run_state.py`) is the single object every stage reads and
+  writes — evidence, confidence, completed/failed agents, decision, trace —
+  instead of a chain of ad hoc local variables.
+- **Planner** decides which agents run and whether in parallel.
+- **RetryEngine** bounds retry around the one call that crosses a real network
+  boundary (the Risk Assessment Engine backend); distinct from the
+  CircuitBreaker, which decides whether to attempt the call at all.
+- **PolicyEngine** (`policy_packs.py`) selects the active domain pack — the
+  Trust Gate, Correlation Engine, and Risk Assessment Engine all read from it.
+  Switching packs live (`POST /policy/active`) changes what's required and how
+  risk is reasoned about, with zero code changes to gate/critic/controller.
+- **Memory** (`memory.py`) tracks a signal across a vehicle's past runs
+  (`GET /vehicles/{id}/trend`) instead of judging one snapshot.
+- **Metrics** (`metrics.py`) aggregates run outcomes, retries, evidence
+  rejected, and action counts over everything persisted (`GET /metrics`).
+
+`pipeline.Harness` / `build_harness()` remain the public entry point — internally
+they now delegate to the Supervisor, so the whole runtime is a drop-in, not a
+rewrite of the tested pipeline.
 
 ---
 
@@ -106,6 +140,14 @@ python scripts/demo.py --auto     # straight through
 6. **Stale cargo temp** (stretch) → evidence excluded → `INSUFFICIENT_DATA`.
 7. **Unauthorized action attempt** (red team) → every path from an agent to an
    action is blocked; the dashboard's *Authorization Boundary* panel proves it live.
+8. **Simulated network blip** (Simulation Lab) → the Risk Assessment Engine fails
+   once, the RetryEngine retries and recovers within the same run — a live
+   `Retry #1 → Risk Assessment Engine (2 attempts)` row on the Harness Runtime
+   page's timeline.
+9. **Switch policy pack** (Harness Runtime page) → select "Tyre Safety Policy" and
+   run again: the Trust Gate now requires tyre signals instead of cargo signals,
+   and the Risk Assessment Engine reasons about tyre pressure/temperature instead
+   of cold-chain thresholds — zero code changes, same gate/critic/controller.
 
 ---
 
@@ -118,7 +160,9 @@ cd backend
 
 Fast, deterministic, and **network-free** (mock critic). Covers the gate, policy,
 critic validation, confidence, controller table, action gateway, isolation
-guarantees, every pipeline scenario, and the HTTP surface — 69 tests.
+guarantees, every pipeline scenario, the HTTP surface, and the Harness Runtime
+additions (Supervisor/RunState wiring, retry recovery, gate-stage breakdown,
+policy-pack switching, confidence breakdown, metrics, memory) — 89 tests.
 
 ### Property-based / fuzz testing
 
@@ -165,18 +209,27 @@ python scripts/fuzz_api.py --requests 400 --threads 6
 
 ```
 backend/app/
-  agents.py     world.py      config.py     schemas.py
-  gate.py       policy.py     critic.py     confidence.py
-  controller.py actions.py    pipeline.py   store.py   audit.py   main.py
+  agents.py     world.py      config.py       schemas.py
+  gate.py       policy.py     policy_packs.py critic.py      confidence.py
+  correlation.py verifier.py  circuit_breaker.py tools.py    security.py
+  controller.py  actions.py   store.py        audit.py
+  planner.py     retry_engine.py  run_state.py supervisor.py pipeline.py  main.py
+  memory.py      metrics.py
 backend/tests/  ...
 frontend/src/   App.tsx  components.tsx  api.ts  types.ts  styles.css
+  pages/HarnessRuntime.tsx
+  components/HarnessRuntimeDiagram.tsx  HarnessMetricsPanel.tsx
+             PolicyPackCard.tsx  ConfidenceBreakdownCard.tsx  VehicleTrendCard.tsx
 scripts/demo.py
 ```
 
 ## API surface
 
-`POST /runs` · `GET /decisions/{run_id}` · `GET /decisions` · `GET /state` ·
-`GET /audit` · `GET /actions/pending` · `GET /actions/{id}` ·
-`POST /actions/{id}/approve|reject` · `POST /simulate/{scenario,kill-agent,corrupt-llm,stale-signal,reset}`
+`POST /runs[?policy_pack=]` · `GET /decisions/{run_id}` · `GET /decisions` ·
+`GET /state` · `GET /audit` · `GET /actions/pending` · `GET /actions/{id}` ·
+`POST /actions/{id}/approve|reject` ·
+`POST /simulate/{scenario,kill-agent,corrupt-llm,stale-signal,transient-error,reset}` ·
+`GET /metrics` · `GET|POST /policy/packs|active` ·
+`GET /vehicles/{vehicle_id}/trend?signal=`
 
 Interactive docs at `http://localhost:8000/docs`.

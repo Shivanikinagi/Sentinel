@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     # --- Action Gateway (Layer 2) ---
     auto_approve_auto_tier: bool = True
 
+    # --- Harness Runtime ---
+    critic_max_attempts: int = 2   # RetryEngine: attempts before accepting a
+                                   # backend_error rejection (or the breaker opens)
+    active_policy_pack: str = "cold_chain"   # PolicyEngine: default pack key
+
     @property
     def resolved_db_path(self) -> str:
         """Absolute DB path. ':memory:' is passed through untouched."""

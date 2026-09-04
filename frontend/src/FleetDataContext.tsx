@@ -36,6 +36,7 @@ interface FleetData {
   emergencyOverride: () => void;
   sensorDrift: (temp?: number) => void;
   tripCircuitBreaker: () => void;
+  triggerTransientError: () => void;
   reset: () => void;
 }
 
@@ -164,6 +165,7 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
     emergencyOverride: () => guard(() => api.emergencyOverride(), "🚨 EMERGENCY HUMAN OVERRIDE ENGAGED", true),
     sensorDrift: (temp = 14.5) => guard(() => api.sensorDrift(temp), `Sensor Drift: Temp set to ${temp}°C`, true),
     tripCircuitBreaker: () => guard(() => api.tripCircuitBreaker(), "⚡ LLM Circuit Breaker Tripped to OPEN", true),
+    triggerTransientError: () => guard(() => api.transientError(), "↻ Risk Assessment Engine will fail once, then retry", true),
     reset: () => guard(() => api.reset(), "Harness State Reset"),
   };
 

@@ -2,7 +2,10 @@ import type {
   ActionRequest,
   AuditRecord,
   ControllerDecision,
+  HarnessMetrics,
+  PolicyPackInfo,
   ProbeResult,
+  VehicleTrend,
   WorldState,
 } from "./types";
 
@@ -19,12 +22,23 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => req<{ ok: boolean; critic_backend: string; model: string }>("/health"),
-  run: () => req<ControllerDecision>("/runs", { method: "POST" }),
+  run: (policyPack?: string) =>
+    req<ControllerDecision>(`/runs${policyPack ? `?policy_pack=${policyPack}` : ""}`, { method: "POST" }),
   recentDecisions: (limit = 1) =>
     req<ControllerDecision[]>(`/decisions?limit=${limit}`),
+  decision: (runId: string) => req<ControllerDecision>(`/decisions/${runId}`),
   state: () => req<WorldState>("/state"),
   audit: (limit = 30) => req<AuditRecord[]>(`/audit?limit=${limit}`),
   pending: () => req<ActionRequest[]>("/actions/pending"),
+
+  metrics: () => req<HarnessMetrics>("/metrics"),
+  policyPacks: () => req<PolicyPackInfo[]>("/policy/packs"),
+  activePolicyPack: () => req<PolicyPackInfo>("/policy/active"),
+  setActivePolicyPack: (key: string) =>
+    req<PolicyPackInfo>("/policy/active", { method: "POST", body: JSON.stringify({ key }) }),
+  vehicleTrend: (vehicleId: string, signal: string, limit = 8) =>
+    req<VehicleTrend>(`/vehicles/${vehicleId}/trend?signal=${signal}&limit=${limit}`),
+  transientError: () => req("/simulate/transient-error", { method: "POST" }),
 
   scenario: (name: string) =>
     req("/simulate/scenario", { method: "POST", body: JSON.stringify({ name }) }),
