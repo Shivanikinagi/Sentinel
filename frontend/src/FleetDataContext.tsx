@@ -52,7 +52,9 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
   const [probe, setProbe] = useState<ProbeResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [survivedFailuresCount, setSurvivedFailuresCount] = useState(4);
+  // Counts the failures actually injected in THIS session, so the topbar badge
+  // is a real count rather than a seeded-looking number.
+  const [survivedFailuresCount, setSurvivedFailuresCount] = useState(0);
   const [timeLapseSpeed, setTimeLapseSpeed] = useState(1);
   const [autoPlayActive, setAutoPlayActive] = useState(false);
 

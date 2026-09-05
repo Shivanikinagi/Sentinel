@@ -41,6 +41,16 @@
   box-sizing: border-box;
 }
 
+/* Presentation: scripted/anchor scrolling glides instead of jumping, which is
+   what makes a recorded walkthrough readable. Respects reduced-motion. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -797,6 +807,21 @@ code, pre, .font-mono, .step-value {
   border: 1px solid var(--border);
   padding: 10px 14px;
   border-radius: var(--radius-sm);
+}
+
+/* Replay reveals these one at a time; easing each row in makes that read as a
+   deliberate step-through rather than rows popping into existence. */
+@keyframes timeline-step-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.timeline-step-item {
+  animation: timeline-step-in 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-step-item { animation: none; }
 }
 
 .timeline-step-item.step-ok { border-left: 3px solid var(--emerald); }

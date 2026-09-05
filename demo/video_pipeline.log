@@ -1,0 +1,32 @@
+[   0.00s] INFO  Fleet-Harness demo video — 3 acts, 24 beats, 458 narration words
+[   0.00s] INFO    act1: 7 beats — A normal shipment
+[   0.00s] INFO    act2: 11 beats — Contradictory evidence
+[   0.00s] INFO    act3: 6 beats — Authority
+[   0.29s] INFO  ffmpeg: C:\Users\ShivaniKinagi\AppData\Local\Programs\Python\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe
+[   0.30s] INFO  synthesising 26 narration clips with SAPI (Microsoft David Desktop)
+[   1.46s] INFO  narration: 26 clips, 458 words, 167.9s spoken (164 wpm)
+[   1.46s] INFO  estimated finished length: 187s (3.11 min)
+[   1.46s] INFO    a1-01   5.97s  TRUCK-042 is a refrigerated shipment. Its cargo spoils outside a two to six degree band.
+[   1.46s] INFO    a1-02   9.04s  Two agents observe it, isolated in code. The Vehicle Agent reads only the truck's sensors; the Environment Agent only route and weather. Neither can see the other.
+[   1.46s] INFO    a1-03   1.99s  Run a check on a normal shipment.
+[   1.46s] INFO    a1-04   5.11s  Both agents dispatched in parallel: five signals from the truck, four from the environment.
+[   1.46s] INFO    a1-05   9.83s  The Trust Gate grades all nine before any model sees them: schema, freshness recomputed from the timestamp, provenance against the one authorised source agent, then one reading per signal.
+[   1.46s] INFO    a1-06   6.06s  Nine trusted, none excluded. The Risk Assessment Engine reasons over that evidence and reports low risk.
+[   1.46s] INFO    a1-07   6.92s  And the deterministic controller decides: auto optimise, one hundred percent confidence. Dispatch continues.
+[   1.46s] INFO    a2-01   9.32s  Now a realistic failure. The cooling unit reports ON, while cargo climbs to eleven and a half degrees, in forty-one degree heat, after thirty-seven minutes stopped.
+[   1.46s] INFO    a2-02   6.08s  Both of those cannot be true. Either the cooling unit is not actually running, or the cargo sensor is wrong.
+[   1.46s] INFO    a2-03   1.02s  Run it.
+[   1.46s] INFO    a2-04   6.28s  The agents report independently. Neither can see the other's data, so neither can explain the discrepancy away.
+[   1.46s] INFO    a2-05   6.62s  Correlation catches it deterministically, before the model reasons at all: cooling on, cargo above the safe maximum.
+[   1.46s] INFO    a2-06   7.25s  Then the Critic goes looking for inconsistency, and finds it. High risk, contradiction detected, four factors cited.
+[   1.46s] INFO    a2-07   8.40s  The Verifier then checks the Critic against its own evidence: is high risk backed by factors, does every factor map to a real signal, is the contradiction supported?
+[   1.46s] INFO    a2-08  11.84s  Confidence falls from a hundred percent to seventy-eight: nine trusted signals, minus a two signal contradiction penalty, over nine expected. Computed in code — the model is forbidden from reporting confidence at all.
+[   1.46s] INFO    a2-09   5.24s  Now the deterministic gate. Three states, five rules, first match wins.
+[   1.46s] INFO    a2-10   6.63s  Rule four fires: risk high with a contradiction flag. Critical halt. Automated dispatch stops.
+[   1.46s] INFO    a2-11   5.04s  The Critic did not decide that. It produced an assessment. The rule decided.
+[   1.46s] INFO    a3-01   6.61s  Halting dispatch is a human tier action. It does not execute. It opens for approval, and waits.
+[   1.46s] INFO    a3-02   8.14s  A person approves, and only then is the escalation record created: requested, approved, executed, each with an actor and a timestamp.
+[   1.46s] INFO    a3-03   3.43s  And the AI cannot do any of this itself. Watch.
+[   1.46s] INFO    a3-04   6.21s  That is the Vehicle Agent genuinely attempting to call another agent's tool. Denied at call time by the tool registry.
+[   1.46s] INFO    a3-05   4.49s  And this red team probe really tries eight different paths from an agent to a dispatch action.
+[   1.46s] INFO    a3-06   8.76s  All eight blocked — not by a permission check that could be misconfigured. The agents module has no import of the actions module. There is no object to call.

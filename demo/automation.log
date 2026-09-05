@@ -1,0 +1,321 @@
+[    0.00s] INFO  Fleet-Harness — master demo walkthrough
+[    0.00s] INFO    ch01   0.95 min   8 beats  The Problem
+[    0.00s] INFO    ch02   1.43 min  11 beats  Architecture
+[    0.00s] INFO    ch03   1.35 min  10 beats  The Dashboard
+[    0.00s] INFO    ch04   1.65 min  13 beats  A Healthy Run
+[    0.00s] INFO    ch05   0.80 min   7 beats  Vehicle Explorer
+[    0.00s] INFO    ch06   0.36 min   3 beats  The Pipeline Page
+[    0.00s] INFO    ch07   2.14 min  15 beats  Runtime Deep Dive
+[    0.00s] INFO    ch08   1.68 min  13 beats  Contradictory Evidence
+[    0.00s] INFO    ch09   0.89 min   7 beats  Human Approval
+[    0.00s] INFO    ch10   2.41 min  20 beats  The Failure Matrix
+[    0.00s] INFO    ch11   1.19 min  10 beats  Policy Packs
+[    0.00s] INFO    ch12   1.08 min   7 beats  Isolation
+[    0.00s] INFO    ch13   1.04 min   7 beats  Replay and Audit
+[    0.00s] INFO    ch14   0.71 min   7 beats  Analytics and Configuration
+[    0.00s] INFO    ch15   1.07 min   8 beats  Confidence and Authority
+[    0.00s] INFO    ch16   0.89 min   9 beats  Closing
+[    0.00s] INFO    TOTAL 19.66 minutes (1179s) at 1x
+[    0.25s] INFO  planned walkthrough: 16 chapters, 155 beats, 19.7 minutes at 1x
+[    4.34s] INFO  starting backend: C:\Users\ShivaniKinagi\AppData\Local\Programs\Python\Python313\python.exe -m uvicorn app.main:app --port 8000
+[    8.40s] INFO  starting frontend: C:\Program Files\nodejs\npm.cmd run dev
+[   10.48s] INFO  ready: backend /health
+[   15.63s] INFO  ready: frontend :5173
+[   17.67s] INFO  backend health: {'ok': True, 'critic_backend': 'mock', 'model': 'inclusionai/ling-3.0-flash-fin:free'}
+[   34.06s] INFO  world + store reset to the healthy baseline (3 seed runs)
+[   41.87s] INFO  route -> /
+[   44.37s] INFO  ===== CHAPTER 1: The Problem (1.0 min planned) =====
+[   46.82s] INFO    1.01 Fleet-Harness is not an AI agent. It is a trust harness: a decision-control layer between AI rea
+[   47.54s] INFO  route -> /
+[   56.84s] INFO  screenshot -> ch01-dashboard.png
+[   56.85s] INFO    1.02 The asset is a refrigerated truck, TRUCK-042, carrying cargo that spoils outside a two-to-six de
+[   62.88s] INFO    1.03 The obvious design hands the telemetry to a language model and lets it decide. That design fails
+[   70.28s] INFO    1.04 It trusts whatever data arrives: stale, duplicated, or from the wrong sensor.
+[   74.96s] INFO    1.05 It trusts whatever the model says: malformed, ungrounded, or internally contradictory.
+[   79.31s] INFO    1.06 And it gives the model authority to change something physical.
+[   83.31s] INFO    1.07 Fleet-Harness splits those three concerns into separate modules that never collapse back into on
+[   96.13s] INFO    1.08 It boots with no API key: a deterministic mock reasoner stands in, so nothing here depends on th
+[  103.17s] INFO  ===== CHAPTER 2: Architecture (1.4 min planned) =====
+[  105.61s] INFO    2.01 This is the Harness Runtime. Every box maps to a real backend module.
+[  106.37s] INFO  route -> /runtime
+[  111.98s] INFO  screenshot -> ch02-runtime-diagram.png
+[  111.99s] INFO    2.02 The Supervisor starts each agent, times every stage, retries the one call that crosses a network
+[  120.05s] INFO    2.03 The State Manager is RunState: one object per run that every stage reads and writes, instead of 
+[  128.47s] INFO    2.04 The Scheduler is the Planner. It decides which agents run, and whether they may run in parallel.
+[  134.84s] INFO    2.05 The Retry Engine bounds retries inside one run. The Circuit Breaker is separate: it decides whet
+[  143.59s] INFO    2.06 The Policy Engine selects the active domain pack. The gate, the correlation engine and the reaso
+[  152.00s] INFO    2.07 The Execution Trace times every stage, including retries and the four Trust Gate sub-stages.
+[  157.37s] INFO    2.08 Memory tracks a signal across a vehicle's past runs, so the harness judges a trend, not a snapsh
+[  164.08s] INFO    2.09 Audit is an append-only log of every meaningful transition.
+[  167.74s] INFO    2.10 The line underneath is the real call order: Planner, Supervisor running agents, gate, correlatio
+[  178.86s] INFO    2.11 The same architecture as five layers, each in its own module: Intelligence, Evidence, Policy, De
+[  179.58s] INFO  route -> /pipeline
+[  190.42s] INFO  screenshot -> ch02-layers.png
+[  190.43s] INFO  ===== CHAPTER 3: The Dashboard (1.4 min planned) =====
+[  192.90s] INFO    3.01 The operator's view is a control room, not a KPI wall.
+[  193.65s] INFO  route -> /
+[  198.04s] INFO    3.02 Top line: decisions waiting on a human, vehicles monitored, harness runs this session. The Harne
+[  209.51s] INFO    3.03 Beside it the counterfactual: what an unconstrained model with direct fleet-API access would do 
+[  218.93s] INFO    3.04 The five-layer strip is live — each box takes its colour from the run that just executed. Under 
+[  232.07s] INFO  screenshot -> ch03-pipeline-strip.png
+[  232.10s] INFO    3.05 Live Execution animates the real call order: two agents in parallel, gate, risk assessment, deci
+[  238.82s] INFO    3.06 Beside it the events feed — the same audit stream the Audit page reads.
+[  244.18s] INFO    3.07 Then the decision trace, every stage's duration in milliseconds.
+[  247.86s] INFO    3.08 Then provenance: every reading carries a sensor id, a hash of its raw payload, and the transform
+[  255.95s] INFO  screenshot -> ch03-provenance.png
+[  255.97s] INFO    3.09 At the bottom, the controller banner and the approvals queue — the only place an action is ever 
+[  258.14s] INFO  click .timelapse-selector button:has-text('5x') 
+[  266.76s] INFO    3.10 And Simple versus Technical: plain English for an operator, or the internal vocabulary underneat
+[  267.59s] INFO  click .timelapse-selector button:has-text('1x') 
+[  268.71s] INFO  click .topbar .mode-toggle button:has-text('Technical') 
+[  274.03s] INFO  screenshot -> ch03-technical.png
+[  274.05s] INFO  ===== CHAPTER 4: A Healthy Run (1.7 min planned) =====
+[  276.50s] INFO    4.01 A healthy run, end to end.
+[  277.11s] INFO  click .topbar .mode-toggle button:has-text('Simple') 
+[  278.22s] INFO  click .btn-scene-healthy 
+[  279.74s] INFO    4.02 Both agents light first, together, then the gate, risk assessment, the decision, the gateway.
+[  282.53s] INFO  click .mc-run-btn — run the harness
+[  287.05s] INFO  RUN run_9513117fdd8d: AUTO_OPTIMIZE conf=1.0 pack=cold_chain retries=0 excluded=0 reason='evidence complete and within safe bounds'
+[  289.72s] INFO  screenshot -> ch04-healthy-run.png
+[  289.73s] INFO    4.03 The Planner dispatched both observers in parallel because their scopes are provably disjoint: th
+[  299.84s] INFO    4.04 Nine signals collected — five from the truck, four from the environment.
+[  304.52s] INFO    4.05 The Trust Gate ran four sub-stages over them, broken out inside the gate step.
+[  311.12s] INFO  screenshot -> ch04-gate-stages.png
+[  311.15s] INFO    4.06 Schema Validator: every reading is a well-formed, typed observation. Freshness Checker: age reco
+[  322.27s] INFO    4.07 Provenance Checker: each signal has exactly one authorized source agent. A reading from the wron
+[  331.02s] INFO    4.08 Evidence Normalizer: one trusted reading per signal, the freshest. That is what makes the confid
+[  338.41s] INFO    4.09 Then Correlation runs deterministic physical checks before the model reasons at all: cooling on 
+[  349.53s] INFO    4.10 Only then does the Risk Assessment Engine reason, over structured evidence only. No tools, no wo
+[  356.92s] INFO    4.11 The Verifier checks the model against its evidence: self-consistency, evidence grounding, and wh
+[  363.98s] INFO    4.12 Then the deterministic Controller decides. Nine trusted, no contradiction, risk low: AUTO_OPTIMI
+[  371.94s] INFO  screenshot -> ch04-auto-optimize.png
+[  371.95s] INFO    4.13 Single-digit milliseconds for the whole chain — gate, correlation, verifier and controller are p
+[  377.63s] INFO  ===== CHAPTER 5: Vehicle Explorer (0.8 min planned) =====
+[  380.07s] INFO    5.01 The Vehicle Explorer is the per-asset view.
+[  380.80s] INFO  route -> /vehicle
+[  384.40s] INFO  screenshot -> ch05-vehicle.png
+[  384.42s] INFO    5.02 Four headline numbers: was the gate clean, what share of evidence was fresh, the computed confid
+[  392.49s] INFO    5.03 Confidence history across the session. Below it, live telemetry — raw world state, ground truth,
+[  400.22s] INFO    5.04 The gate does its work between that and what comes next.
+[  404.56s] INFO    5.05 These panels are what each agent reported after the gate graded it. Keeping raw truth and gated 
+[  413.97s] INFO  screenshot -> ch05-evidence.png
+[  413.98s] INFO    5.06 Each reading shows freshness and source. Exclusions are shown as exclusions, not silently droppe
+[  419.34s] INFO    5.07 And the risk assessment: level, contradiction flag, cited factors, reasoning summary. Presented 
+[  428.05s] INFO  screenshot -> ch05-critic.png
+[  428.06s] INFO  ===== CHAPTER 6: The Pipeline Page (0.4 min planned) =====
+[  430.50s] INFO    6.01 The Pipeline page pins the same run against the architecture.
+[  431.24s] INFO  route -> /pipeline
+[  435.85s] INFO  screenshot -> ch06-pipeline.png
+[  435.86s] INFO    6.02 Telemetry agents, Trust Gate, Risk Assessment Engine, deterministic Controller, Action Gateway.
+[  440.21s] INFO    6.03 Underneath: sensors reporting, evidence trusted versus ignored, the AI review, the decision, whe
+[  450.96s] INFO  ===== CHAPTER 7: Runtime Deep Dive (2.1 min planned) =====
+[  453.41s] INFO    7.01 Back to the Runtime, reading live state rather than the diagram.
+[  454.16s] INFO  route -> /runtime
+[  457.75s] INFO    7.02 The Supervisor Console logs what the Supervisor actually did: planned, launched each agent by na
+[  465.86s] INFO  screenshot -> ch07-supervisor.png
+[  465.87s] INFO    7.03 Underneath: agents launched, agent failures, retries, and whether a retry recovered.
+[  470.21s] INFO    7.04 Harness Metrics are aggregated server-side over everything persisted, not counters held in memor
+[  480.99s] INFO  screenshot -> ch07-metrics.png
+[  481.00s] INFO    7.05 Confidence Computation shows the arithmetic, not just the number.
+[  484.66s] INFO    7.06 Corroborating signals over expected signals — nine under the cold chain pack — minus a flat two-
+[  492.73s] INFO    7.07 Computed in code. The model is forbidden from reporting a confidence field: that key is not in t
+[  501.84s] INFO    7.08 Below it, the composite trust score: five independently observable factors, multiplied.
+[  506.17s] INFO    7.09 Evidence quality is that same tested formula; verifier score is one if the verifier passed, one 
+[  521.02s] INFO    7.10 None of the five is self-reported by the model. Each is measured somewhere else in the system.
+[  527.39s] INFO    7.11 One thing the diagram does not draw: the Event Bus. Every stage publishes a typed event rather t
+[  544.27s] INFO    7.12 Signal Trend is Memory: one signal across the vehicle's past runs, read back out of the store, w
+[  545.02s] INFO  select .trend-select = ambient_temperature
+[  554.16s] INFO  screenshot -> ch07-trend.png
+[  554.16s] INFO    7.13 World State again, labelled pre-gate so it is never mistaken for evidence. The Decision Certific
+[  565.88s] INFO    7.14 Five checks, five stored facts.
+[  569.26s] INFO  screenshot -> ch07-certificate.png
+[  569.27s] INFO    7.15 Incident Memory is a different subsystem from Memory. Memory asks whether a signal is drifting; 
+[  582.41s] INFO  ===== CHAPTER 8: Contradictory Evidence (1.7 min planned) =====
+[  584.83s] INFO    8.01 Now the failure scenario, where the architecture earns its keep.
+[  585.57s] INFO  route -> /
+[  588.83s] INFO    8.02 Cooling reports ON. Cargo is eleven point five degrees, nearly double the safe band. Ambient for
+[  589.44s] INFO  click .btn-scene-risk 
+[  597.23s] INFO    8.03 Those two facts cannot both be true. Either the cooling unit is not really running, or the cargo
+[  605.98s] INFO    8.04 Run it.
+[  608.69s] INFO  click .mc-run-btn — run the harness
+[  613.17s] INFO  RUN run_d883b5c0d396: CRITICAL_HALT conf=0.78 pack=cold_chain retries=0 excluded=0 reason='halt: contradiction detected'
+[  615.70s] INFO  screenshot -> ch08-halt.png
+[  615.71s] INFO    8.05 Correlation caught it deterministically, before the model reasoned at all: cooling on, cargo abo
+[  624.12s] INFO    8.06 The Risk Assessment Engine reasoned over the same evidence and reached HIGH risk with the contra
+[  631.85s] INFO    8.07 The Verifier checked it against the evidence: high risk backed by factors, every factor mapped t
+[  641.95s] INFO    8.08 Confidence fell from a hundred percent to seventy-eight: nine trusted, minus the two-signal cont
+[  648.71s] INFO    8.09 Notice what did not happen. The model did not decide — it produced an assessment.
+[  654.42s] INFO    8.10 The Controller is a state machine: three states, first match wins, in the order agents down, out
+[  662.83s] INFO    8.11 It reached rule four — risk high or contradiction flagged. CRITICAL_HALT. And it is the only com
+[  670.90s] INFO    8.12 The decision explainer puts the whole chain in one place: final state, the reasoner's output, th
+[  672.34s] INFO  click .btn-explainer 
+[  683.53s] INFO  screenshot -> ch08-explainer.png
+[  683.55s] INFO    8.13 Every claim there is a field on the stored decision. Nothing is re-derived in the browser.
+[  684.47s] INFO  click .btn-close 
+[  690.57s] INFO  ===== CHAPTER 9: Human Approval (0.9 min planned) =====
+[  693.01s] INFO    9.01 The Action Gateway is the authority boundary — the only place an action can be requested, approv
+[  693.72s] INFO  route -> /
+[  701.44s] INFO  screenshot -> ch09-pending.png
+[  701.46s] INFO    9.02 Halting automation is human-tier. It does not execute. It opens for approval and waits.
+[  706.82s] INFO    9.03 Nothing inside the system can move it forward. Only a person can.
+[  711.50s] INFO    9.04 Approve it.
+[  712.17s] INFO  click .action-card button.ok 
+[  715.29s] INFO    9.05 The gateway moves it to approved, then executes — which here means creating an immutable escalat
+[  728.95s] INFO  screenshot -> ch09-approved.png
+[  728.96s] INFO    9.06 An operator can also reject with a reason, recorded just as durably. A decision not to act is st
+[  736.69s] INFO    9.07 Every transition also lands in the append-only audit table under a fixed event vocabulary, which
+[  745.44s] INFO  ===== CHAPTER 10: The Failure Matrix (2.4 min planned) =====
+[  747.87s] INFO    10.01 The Simulation Lab drives every failure mode the harness claims to survive. Each control hits a 
+[  748.60s] INFO  route -> /simulation
+[  749.20s] INFO  click button:has-text('Normal conditions') 
+[  759.11s] INFO  screenshot -> ch10-simlab.png
+[  759.12s] INFO    10.02 Failure one: an agent dies mid-route.
+[  759.65s] INFO  click button:has-text('Disconnect route sensors') 
+[  761.77s] INFO    10.03 The Environment Agent is unavailable. The harness does not guess the missing values and does not
+[  764.64s] INFO  click button.primary:has-text('Run check') — run the harness
+[  769.21s] INFO  RUN run_5b85a62fc2cc: INSUFFICIENT_DATA conf=0.56 pack=cold_chain retries=0 excluded=0 reason='agent(s) unavailable: agent_b'
+[  771.90s] INFO  screenshot -> ch10-agent-down.png
+[  771.91s] INFO    10.04 Rule one fires: agents unavailable. INSUFFICIENT_DATA at fifty-six percent, five of nine signals
+[  780.66s] INFO    10.05 Failure two: the model returns malformed output.
+[  781.22s] INFO  click button:has-text('Reconnect route sensors') 
+[  782.27s] INFO  click button:has-text('Simulate AI glitch') 
+[  783.64s] INFO    10.06 The payload is valid JSON but violates the contract: no reasoning summary, plus a confidence fie
+[  786.28s] INFO  click button.primary:has-text('Run check') — run the harness
+[  790.80s] INFO  RUN run_946266455687: INSUFFICIENT_DATA conf=1.0 pack=cold_chain retries=0 excluded=0 reason="critic output rejected: schema_validation_failed: 2 validation errors for RiskMatrix\nreasoning_summary\n  Field required [type=missing, input_value={'risk_level': 'HIGH', 'c...g'], 'confidence': 0.99}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.10/v/missing\nconfidence\n  Extra inputs are not permitted [type=extra_forbidden, input_value=0.99, input_type=float]\n    For further information visit https://errors.pydantic.dev/2.10/v/extra_forbidden"
+[  801.29s] INFO  screenshot -> ch10-corrupt.png
+[  801.31s] INFO    10.07 Rule two fires: critic output rejected, INSUFFICIENT_DATA.
+[  804.29s] INFO    10.08 And confidence is still a hundred percent. Not a bug: confidence measures evidence completeness,
+[  814.40s] INFO    10.09 Failure three: stale telemetry. One cargo reading backdated four minutes.
+[  814.97s] INFO  click button:has-text('Simulate old data') 
+[  818.40s] INFO    10.10 The gate recomputes age from the timestamp, so it lands past the freshness window and is exclude
+[  820.99s] INFO  click button.primary:has-text('Run check') — run the harness
+[  825.53s] INFO  RUN run_0f4fb4f0f8c1: INSUFFICIENT_DATA conf=0.89 pack=cold_chain retries=0 excluded=1 reason='required evidence missing/untrusted: cargo_temperature'
+[  828.04s] INFO  screenshot -> ch10-stale.png
+[  828.06s] INFO    10.11 Cargo temperature is required, so rule three fires: required evidence missing or untrusted. Eigh
+[  834.10s] INFO    10.12 Failure four: a network blip on the one call that crosses a real network boundary. The next risk
+[  834.70s] INFO  click button:has-text('Clear old data') 
+[  835.68s] INFO  click button:has-text('Simulate network blip') 
+[  841.83s] INFO    10.13 The Retry Engine tries again inside the same run, and recovers.
+[  844.50s] INFO  click button.primary:has-text('Run check') — run the harness
+[  849.02s] INFO  RUN run_b408bf8ce3f0: AUTO_OPTIMIZE conf=1.0 pack=cold_chain retries=1 excluded=0 reason='evidence complete and within safe bounds'
+[  851.11s] INFO    10.14 There is the retry row, marked attempt failed, and the recovered marker on the stage that succee
+[  851.87s] INFO  route -> /runtime
+[  860.13s] INFO  screenshot -> ch10-retry.png
+[  860.14s] INFO    10.15 System Indicators tracks all of it live, including open escalations.
+[  860.87s] INFO  route -> /simulation
+[  864.14s] INFO    10.16 Failure five: three consecutive model failures open the Circuit Breaker.
+[  864.87s] INFO  route -> /
+[  865.48s] INFO  click button:has-text('Trip Circuit Breaker') 
+[  868.15s] INFO    10.17 Now it stops attempting the call at all rather than sitting on timeouts, and records that the br
+[  871.54s] INFO  click .mc-run-btn — run the harness
+[  876.07s] INFO  RUN run_f54435f96ca5: INSUFFICIENT_DATA conf=1.0 pack=cold_chain retries=0 excluded=0 reason='critic output rejected: LLM Circuit Breaker is OPEN due to 3 consecutive failures. Using deterministic fallback.'
+[  878.99s] INFO  screenshot -> ch10-breaker.png
+[  879.00s] INFO    10.18 After the cooldown it half-opens, and the next successful call closes it. No restart needed.
+[  896.38s] INFO  circuit breaker closed again (recovery run succeeded)
+[  896.74s] INFO    10.19 Two more injections. Sensor drift pushes cargo to fourteen and a half.
+[  898.10s] INFO  click button:has-text('Sensor Drift') 
+[  901.42s] INFO    10.20 And the red override forces the worst case: fifteen degrees, with cooling still insisting it is 
+[  902.76s] INFO  click .btn-emergency-override 
+[  909.29s] INFO  ===== CHAPTER 11: Policy Packs (1.2 min planned) =====
+[  911.73s] INFO    11.01 Everything so far was cold chain. But nothing in the gate, correlation, verifier or controller k
+[  912.46s] INFO  route -> /runtime
+[  920.54s] INFO  screenshot -> ch11-packs.png
+[  920.55s] INFO    11.02 The domain lives in a policy pack. Two ship today.
+[  924.55s] INFO    11.03 Cold Chain requires cargo temperature, cooling status and ambient temperature, and expects nine 
+[  934.31s] INFO    11.04 Switch the active pack to Tyre Safety and run the very same world again.
+[  935.16s] INFO  click .policy-pack-card:has-text('Tyre Safety') 
+[  937.67s] INFO  circuit breaker closed again (recovery run succeeded)
+[  938.41s] INFO  route -> /
+[  941.86s] INFO  click .mc-run-btn — run the harness
+[  946.37s] INFO  RUN run_26de1b85a303: AUTO_OPTIMIZE conf=1.0 pack=tyre_safety retries=0 excluded=4 reason='evidence complete and within safe bounds'
+[  948.80s] INFO  screenshot -> ch11-tyre-run.png
+[  948.81s] INFO    11.05 Same world, same code paths, completely different outcome.
+[  949.56s] INFO  route -> /runtime
+[  952.13s] INFO    11.06 Cargo temperature, cooling status, weather severity and dwell are now excluded as unknown signal
+[  960.88s] INFO    11.07 The expected denominator moved from nine to five, so the confidence arithmetic changed underneat
+[  966.57s] INFO    11.08 And the reasoner switched to tyre logic: the contradiction it hunts is underinflation plus heat,
+[  973.62s] INFO    11.09 Telemetry that halted automation under Cold Chain runs clean under Tyre Safety, because policy d
+[  984.73s] INFO  screenshot -> ch11-effect.png
+[  984.74s] INFO    11.10 Zero code changes in gate, correlation, risk engine or controller. Switch back.
+[  986.24s] INFO  click .policy-pack-card:has-text('Cold Chain') 
+[  989.42s] INFO  ===== CHAPTER 12: Isolation (1.1 min planned) =====
+[  991.86s] INFO    12.01 Now the guarantee most systems assert and few demonstrate: the AI components cannot act.
+[  997.22s] INFO    12.02 That button makes the Vehicle Agent genuinely attempt to call the Environment Agent's tool.
+[  997.99s] INFO  click button:has-text('Try: Vehicle') 
+[ 1004.42s] INFO  screenshot -> ch12-tool-denied.png
+[ 1004.43s] INFO    12.03 Denied by the Tool Registry — scoped access, checked at call time.
+[ 1009.11s] INFO    12.04 The red-team probe goes further. It inspects the live agent object for seven action-shaped attri
+[ 1009.84s] INFO  route -> /simulation
+[ 1011.13s] INFO  click button:has-text('Test the safety lock') 
+[ 1023.10s] INFO  screenshot -> ch12-probe.png
+[ 1023.11s] INFO    12.05 Eight attempts, all blocked — not by a permission check that could be misconfigured, but by the 
+[ 1031.52s] INFO    12.06 The agents module does not import actions; neither does the critic. There is no object to call. 
+[ 1046.04s] INFO    12.07 Ninety-eight tests cover the gate, policy, critic validation, confidence, the controller table, 
+[ 1055.80s] INFO  ===== CHAPTER 13: Replay and Audit (1.0 min planned) =====
+[ 1058.23s] INFO    13.01 Replay. Every run is durably persisted: the decision, its evidence snapshot, the gate notes, the
+[ 1058.96s] INFO  route -> /audit
+[ 1070.78s] INFO  screenshot -> ch13-audit.png
+[ 1070.79s] INFO    13.02 Filterable by event type.
+[ 1070.81s] INFO  select select.select = decision_made
+[ 1073.76s] INFO    13.03 And searchable across the whole trail.
+[ 1073.78s] INFO  select select.select = 
+[ 1075.09s] INFO  type '.topbar-search input' = 'halt'
+[ 1078.20s] INFO  screenshot -> ch13-search.png
+[ 1078.21s] INFO    13.04 Selecting any record with a run reconstructs that decision out of storage: its stepper, its stat
+[ 1078.31s] INFO  type '.topbar-search input' = ''
+[ 1080.95s] INFO  click .audit-row-btn:not([disabled]) 
+[ 1089.99s] INFO  screenshot -> ch13-replay-decision.png
+[ 1090.01s] INFO    13.05 And the trace replays stage by stage, paced by the durations actually recorded.
+[ 1090.76s] INFO  route -> /runtime
+[ 1092.51s] INFO  click button:has-text('Replay Incident') 
+[ 1099.54s] INFO  screenshot -> ch13-replay.png
+[ 1099.55s] INFO    13.06 Incident Memory has filled in: the halts we caused, joined with how each action was resolved, an
+[ 1108.06s] INFO  screenshot -> ch13-incidents.png
+[ 1108.07s] INFO    13.07 That is what makes an incident reviewable by someone who was not in the room: not a log line, bu
+[ 1120.53s] INFO  ===== CHAPTER 14: Analytics and Configuration (0.7 min planned) =====
+[ 1122.97s] INFO    14.01 Analytics aggregates the session.
+[ 1123.69s] INFO  route -> /analytics
+[ 1126.27s] INFO  screenshot -> ch14-analytics.png
+[ 1126.28s] INFO    14.02 Runs, schema rejections, contradictions flagged, security probe pass rate.
+[ 1129.94s] INFO    14.03 The Decision Funnel is the most useful view: how many runs reached each gate — runs, evidence co
+[ 1140.01s] INFO  screenshot -> ch14-funnel.png
+[ 1140.02s] INFO    14.04 The drop-off between stages is where the harness refused to proceed. Every step down is a decisi
+[ 1147.07s] INFO    14.05 Confidence over time, and the distribution across the three controller states.
+[ 1151.41s] INFO    14.06 Then four health gauges: confidence, healthy decisions, reasoner validity, security integrity.
+[ 1156.91s] INFO  screenshot -> ch14-gauges.png
+[ 1156.92s] INFO    14.07 Settings carries view mode and environment: which reasoning backend is live, the active scenario
+[ 1157.64s] INFO  route -> /settings
+[ 1165.65s] INFO  screenshot -> ch14-settings.png
+[ 1165.65s] INFO  ===== CHAPTER 15: Confidence and Authority (1.1 min planned) =====
+[ 1168.10s] INFO    15.01 Two ideas hold this design together.
+[ 1168.83s] INFO  route -> /runtime
+[ 1170.73s] INFO    15.02 First, confidence: a measure of evidence, computed in code, with a fixed denominator that data l
+[ 1177.78s] INFO    15.03 If the denominator were whatever you happened to receive, losing an agent would leave you at a h
+[ 1189.93s] INFO    15.04 So a killed agent, an excluded stale reading, or a contradiction genuinely lowers the number. Th
+[ 1197.66s] INFO    15.05 Second, authority. The model's output is an input to a decision, never the decision.
+[ 1203.01s] INFO    15.06 Validated against a strict schema, verified against its evidence, then consumed by a state machi
+[ 1211.09s] INFO    15.07 The Controller is the only component permitted to request an action, in one of its three states 
+[ 1221.87s] INFO    15.08 Which means if the model is unavailable, malformed, contradictory or simply wrong, the worst out
+[ 1230.62s] INFO  ===== CHAPTER 16: Closing (0.9 min planned) =====
+[ 1233.05s] INFO    16.01 Five layers, five modules, never collapsed into one.
+[ 1233.77s] INFO  route -> /pipeline
+[ 1237.17s] INFO    16.02 Intelligence: two isolated agents and one reasoner with no tools and no authority.
+[ 1242.19s] INFO    16.03 Evidence: a deterministic trust gate — freshness, provenance, completeness, normalization. Polic
+[ 1251.27s] INFO    16.04 Decision: a three-state machine and a confidence formula, both in code. Authority: one gateway, 
+[ 1259.34s] INFO    16.05 The app even ships its own presenter guide, mapping each scene to the module that guarantees it.
+[ 1260.89s] INFO  click .btn-presenter 
+[ 1269.35s] INFO  screenshot -> ch16-presenter.png
+[ 1269.37s] INFO    16.06 Intelligence is advisory. Deterministic policy is authoritative. Every screen here is an argumen
+[ 1270.75s] INFO  click .btn-close 
+[ 1276.07s] INFO    16.07 Agents investigate.
+[ 1276.80s] INFO  route -> /
+[ 1278.56s] INFO    16.08 The Critic challenges.
+[ 1281.40s] INFO    16.09 Deterministic policy decides.
+[ 1285.92s] INFO  screenshot -> ch16-close.png
+[ 1287.17s] INFO  captions -> C:\Users\ShivaniKinagi\OneDrive - Trinamix Systems Pvt Ltd\Desktop\project\fleet\demo\captions.srt (155 cues)
+[ 1287.27s] INFO  narration -> narration.md (155 lines, measured timecodes)
+[ 1287.27s] INFO  walkthrough finished in 20.8 minutes (speed 1.0x, 0 recoverable step failures)
+[ 1288.12s] INFO  video -> page@5b9e8632e4bbcd8924be852a790c2bf8.webm
+[ 1290.22s] INFO  final metrics: {'total_runs': 16, 'auto_optimize': 8, 'insufficient_data': 7, 'critical_halt': 1, 'critic_rejected': 5, 'evidence_rejected': 9, 'retries': 1, 'circuit_breaker_trips': 4, 'pending_actions': 0, 'executed_actions': 1, 'rejected_actions': 0, 'avg_confidence': 0.952, 'avg_latency_ms': 1.73, 'success_rate': 0.5}
+[ 1290.22s] INFO  stopping backend (pid 12964)
+[ 1290.66s] INFO  stopping frontend (pid 20324)

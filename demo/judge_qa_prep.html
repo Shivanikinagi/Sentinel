@@ -1,0 +1,811 @@
+<title>Fleet-Harness Judge Prep</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#f3f5fa;
+    --panel:#ffffff;
+    --panel-2:#eaeef5;
+    --border:rgba(20,30,50,0.10);
+    --border-strong:rgba(20,30,50,0.18);
+    --text:#101828;
+    --muted:#556082;
+    --muted-2:#7c869f;
+    --cyan:#0b7c92;
+    --cyan-soft:rgba(11,124,146,0.10);
+    --blue:#2452c9;
+    --emerald:#0a8f5f;
+    --emerald-soft:rgba(10,143,95,0.10);
+    --amber:#a2620a;
+    --amber-soft:rgba(162,98,10,0.12);
+    --rose:#b3273f;
+    --rose-soft:rgba(179,39,63,0.10);
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow:0 12px 28px -14px rgba(16,24,40,0.22);
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#080b13;
+      --panel:#0f1526;
+      --panel-2:#141b30;
+      --border:rgba(255,255,255,0.08);
+      --border-strong:rgba(255,255,255,0.16);
+      --text:#eef1f8;
+      --muted:#9aa4c2;
+      --muted-2:#6c7594;
+      --cyan:#3fd2ea;
+      --cyan-soft:rgba(63,210,234,0.12);
+      --blue:#7ba1ff;
+      --emerald:#3fe0a5;
+      --emerald-soft:rgba(63,224,165,0.12);
+      --amber:#f2b94a;
+      --amber-soft:rgba(242,185,74,0.14);
+      --rose:#ff7d92;
+      --rose-soft:rgba(255,125,146,0.12);
+      --shadow:0 20px 40px -18px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#080b13;
+    --panel:#0f1526;
+    --panel-2:#141b30;
+    --border:rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.16);
+    --text:#eef1f8;
+    --muted:#9aa4c2;
+    --muted-2:#6c7594;
+    --cyan:#3fd2ea;
+    --cyan-soft:rgba(63,210,234,0.12);
+    --blue:#7ba1ff;
+    --emerald:#3fe0a5;
+    --emerald-soft:rgba(63,224,165,0.12);
+    --amber:#f2b94a;
+    --amber-soft:rgba(242,185,74,0.14);
+    --rose:#ff7d92;
+    --rose-soft:rgba(255,125,146,0.12);
+    --shadow:0 20px 40px -18px rgba(0,0,0,0.55);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  code,.mono,.qid,.stat-num,kbd{font-family:'JetBrains Mono',ui-monospace,monospace;}
+
+  a{color:var(--cyan);}
+
+  .shell{display:flex;min-height:100vh;align-items:flex-start;}
+
+  /* ------------------------------------------------------------- Sidebar */
+  .nav{
+    width:264px;flex-shrink:0;position:sticky;top:0;height:100vh;
+    background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;padding:22px 16px;gap:14px;
+    overflow-y:auto;
+  }
+  .nav-brand{padding:2px 6px 8px;}
+  .nav-brand .k{
+    font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--cyan);
+  }
+  .nav-brand .v{font-size:17px;font-weight:800;letter-spacing:-0.2px;margin-top:3px;}
+  .search-wrap{position:relative;margin-bottom:4px;}
+  .search-wrap input{
+    width:100%;padding:10px 12px 10px 34px;border-radius:var(--radius-sm);
+    border:1px solid var(--border-strong);background:var(--panel-2);color:var(--text);
+    font:inherit;font-size:13.5px;outline:none;
+  }
+  .search-wrap input:focus{border-color:var(--cyan);}
+  .search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:0.55;}
+  .hit-count{font-size:11.5px;color:var(--muted-2);padding:0 4px;min-height:14px;}
+
+  .navlist{display:flex;flex-direction:column;gap:1px;}
+  .navlist a{
+    display:flex;justify-content:space-between;gap:8px;
+    padding:6.5px 10px;border-radius:7px;font-size:13px;color:var(--muted);
+    text-decoration:none;border:1px solid transparent;
+  }
+  .navlist a .n{color:var(--muted-2);font-size:11px;}
+  .navlist a:hover{background:var(--panel-2);color:var(--text);}
+  .navlist a.active{background:var(--cyan-soft);color:var(--cyan);border-color:var(--border);}
+
+  /* --------------------------------------------------------------- Main */
+  .main{flex:1;min-width:0;padding:38px 44px 90px;max-width:980px;}
+  @media (max-width:760px){ .main{padding:28px 18px 70px;} .nav{display:none;} }
+
+  header.hero{margin-bottom:30px;}
+  .eyebrow{
+    font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:10px;
+  }
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 10px;text-wrap:balance;}
+  .thesis{
+    font-size:16px;color:var(--muted);max-width:62ch;line-height:1.55;margin:0 0 20px;
+  }
+  .thesis b{color:var(--text);font-weight:700;}
+
+  .stat-row{display:flex;flex-wrap:wrap;gap:10px;}
+  .stat{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:10px 14px;min-width:108px;
+  }
+  .stat .stat-num{font-size:19px;font-weight:700;color:var(--text);}
+  .stat .stat-label{font-size:11px;color:var(--muted-2);margin-top:2px;}
+
+  /* --------------------------------------------------------- Mode toggle */
+  .mode-bar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;
+    padding:10px 12px;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+  }
+  .mode-bar .lbl{font-size:11.5px;color:var(--muted-2);font-weight:600;}
+  .mode-switch{display:inline-flex;background:var(--panel-2);border:1px solid var(--border);border-radius:100px;padding:2px;}
+  .mode-btn{
+    border:none;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;
+    padding:6px 13px;border-radius:100px;cursor:pointer;
+  }
+  .mode-btn.active{background:var(--cyan);color:#fff;}
+  .flash-btn{
+    margin-left:auto;border:1px solid var(--border-strong);background:var(--panel-2);color:var(--text);
+    font:inherit;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:100px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .flash-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+  /* one-liner / full-body swap, controlled by body.cram */
+  .card .oneliner{display:none;font-weight:600;}
+  body.cram .card p.full-body,
+  body.cram .bet p.full-body{display:none;}
+  body.cram .card .oneliner,
+  body.cram .bet .oneliner{display:block;}
+  body.cram .card{padding:13px 18px;}
+
+  /* --------------------------------------------------------------- Flashcards */
+  .flash-overlay{
+    position:fixed;inset:0;background:rgba(8,11,19,0.55);backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:24px;
+  }
+  .flash-overlay[hidden]{display:none;}
+  .flash-modal{
+    width:100%;max-width:560px;background:var(--panel);border:1px solid var(--border-strong);
+    border-radius:18px;box-shadow:var(--shadow);padding:22px 24px;
+  }
+  .flash-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .flash-top .title{font-size:13px;font-weight:700;color:var(--muted-2);text-transform:uppercase;letter-spacing:0.06em;}
+  .flash-close{border:none;background:var(--panel-2);color:var(--muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;}
+  .flash-progress{font-size:12px;color:var(--muted-2);margin-bottom:10px;font-variant-numeric:tabular-nums;}
+  .flash-card{
+    min-height:190px;border:1px solid var(--border);border-radius:14px;background:var(--panel-2);
+    padding:20px;display:flex;flex-direction:column;justify-content:center;cursor:pointer;gap:12px;
+  }
+  .flash-card .fq{font-size:11px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+  .flash-card .qtext2{font-size:16.5px;font-weight:700;line-height:1.4;text-wrap:balance;}
+  .flash-card .ans{font-size:14.5px;line-height:1.55;color:var(--text);border-top:1px dashed var(--border);padding-top:12px;}
+  .flash-card .hint{font-size:12px;color:var(--muted-2);}
+  .flash-actions{display:flex;gap:8px;margin-top:16px;}
+  .flash-actions button{
+    flex:1;border:1px solid var(--border-strong);background:var(--panel-2);color:var(--text);
+    font:inherit;font-weight:700;font-size:13px;padding:10px;border-radius:10px;cursor:pointer;
+  }
+  .flash-actions button.primary{background:var(--cyan);color:#fff;border-color:transparent;}
+  .flash-actions button.good{background:var(--emerald-soft);color:var(--emerald);border-color:transparent;}
+  .flash-done{text-align:center;padding:30px 10px;}
+  .flash-done .big{font-size:34px;margin-bottom:6px;}
+
+  section{margin-bottom:40px;scroll-margin-top:20px;}
+  section h2{
+    font-size:20px;font-weight:800;letter-spacing:-0.2px;margin:0 0 4px;
+    display:flex;align-items:baseline;gap:10px;
+  }
+  section h2 .range{font-size:12px;font-weight:600;color:var(--muted-2);}
+  section > .lede{color:var(--muted);font-size:13.5px;margin:0 0 18px;max-width:64ch;}
+
+  .card{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow);
+  }
+  .card .qs{display:flex;flex-wrap:wrap;gap:6px 10px;margin-bottom:9px;}
+  .qid{
+    font-size:10.5px;font-weight:600;color:var(--cyan);background:var(--cyan-soft);
+    padding:2px 7px;border-radius:5px;flex-shrink:0;
+  }
+  .card .qtext{font-size:14.5px;font-weight:700;line-height:1.4;margin:0 0 9px;text-wrap:balance;}
+  .card .qtext .also{font-weight:500;color:var(--muted-2);font-size:12.5px;display:block;margin-top:3px;}
+  .card p{margin:0 0 8px;font-size:13.8px;line-height:1.62;color:var(--text);}
+  .card p:last-child{margin-bottom:0;}
+  .card .why{color:var(--muted);}
+  .card b{font-weight:700;}
+  .card .quote{
+    display:block;margin:8px 0;padding:9px 12px;border-left:2.5px solid var(--cyan);
+    background:var(--cyan-soft);border-radius:0 8px 8px 0;font-size:13.3px;color:var(--text);
+  }
+  .card .num{color:var(--cyan);font-weight:700;}
+
+  .card.flag{border-color:var(--amber-soft);}
+  .card.flag .qid{color:var(--amber);background:var(--amber-soft);}
+  .tag{
+    display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;
+    letter-spacing:0.04em;text-transform:uppercase;padding:2px 8px;border-radius:100px;
+    margin-left:6px;
+  }
+  .tag.hard{color:var(--rose);background:var(--rose-soft);}
+  .tag.honest{color:var(--amber);background:var(--amber-soft);}
+
+  /* ----------------------------------------------------------- Top ten */
+  .top10{
+    background:linear-gradient(180deg,var(--cyan-soft),transparent 140px);
+    border:1px solid var(--border);border-radius:18px;padding:22px 24px 8px;margin-bottom:44px;
+  }
+  .top10 h2{font-size:15px;text-transform:uppercase;letter-spacing:0.1em;color:var(--cyan);margin:0 0 3px;}
+  .top10 > .lede{margin-bottom:16px;}
+  .bet{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;margin-bottom:10px;
+  }
+  .bet .num{
+    display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+    border-radius:6px;background:var(--cyan);color:#fff;font-size:11.5px;font-weight:800;
+    margin-right:8px;flex-shrink:0;
+  }
+  .bet .q{font-size:14.5px;font-weight:700;display:flex;align-items:center;margin-bottom:6px;}
+  .bet p{margin:0 0 6px 30px;font-size:13.6px;line-height:1.6;}
+  .bet p:last-child{margin-bottom:0;}
+
+  /* ------------------------------------------------------------ Cheat sheet */
+  .cheat{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:640px){.cheat{grid-template-columns:1fr;}}
+  .cheat .block{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .cheat .block h3{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted-2);margin:0 0 9px;}
+  .flow{font-size:12.3px;line-height:1.9;color:var(--text);}
+  .flow .arrow{color:var(--muted-2);margin:0 3px;}
+  .flow .stage{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:6px;
+    padding:1.5px 7px;font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  }
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13px;border-bottom:1px dashed var(--border);}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--muted);}
+  .kv .v{font-weight:600;text-align:right;}
+
+  table.dnst{width:100%;border-collapse:collapse;font-size:13px;}
+  table.dnst td{padding:8px 6px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+  table.dnst td.no{color:var(--rose);width:44%;}
+  table.dnst td.yes{color:var(--emerald);}
+
+  footer{
+    margin-top:50px;padding-top:20px;border-top:1px solid var(--border);
+    font-size:12px;color:var(--muted-2);
+  }
+
+  ::selection{background:var(--cyan-soft);}
+  [hidden]{display:none!important;}
+</style>
+
+<div class="shell">
+  <nav class="nav" id="sidenav">
+    <div class="nav-brand">
+      <div class="k">Fleet-Harness</div>
+      <div class="v">Judge Prep</div>
+    </div>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="text" placeholder="Search all 190 questions…" autocomplete="off">
+    </div>
+    <div class="hit-count" id="hitcount"></div>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <div class="eyebrow">Question bank &amp; answer key</div>
+      <h1>Judge Q&amp;A prep</h1>
+      <p class="thesis">Every answer below reduces to one sentence. Land it early, come back to it often: <b>“Intelligence is advisory. Deterministic policy is authoritative.”</b> The model proposes a risk assessment; a plain state machine — not the model — decides whether anything happens.</p>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-num">2</div><div class="stat-label">agents, disjoint scopes</div></div>
+        <div class="stat"><div class="stat-num">4</div><div class="stat-label">trust-gate stages</div></div>
+        <div class="stat"><div class="stat-num">3</div><div class="stat-label">controller states</div></div>
+        <div class="stat"><div class="stat-num">98</div><div class="stat-label">tests passing</div></div>
+        <div class="stat"><div class="stat-num">2</div><div class="stat-label">policy packs shipped</div></div>
+        <div class="stat"><div class="stat-num">0</div><div class="stat-label">confidence fields the model may set</div></div>
+      </div>
+      <div class="mode-bar">
+        <span class="lbl">View</span>
+        <div class="mode-switch" id="modeSwitch">
+          <button class="mode-btn" data-mode="cram">One-liners</button>
+          <button class="mode-btn" data-mode="full">Full answers</button>
+        </div>
+        <span class="lbl" id="modeHint">one sentence per question — for the last hour before you go on</span>
+        <button class="flash-btn" id="openFlash">🎴 Drill with flashcards</button>
+      </div>
+    </header>
+
+    <div class="top10" id="top10">
+      <h2>If you only prep ten</h2>
+      <p class="lede">The ten questions most likely to open a judge round, with the answer that closes each one.</p>
+
+      <div class="bet"><div class="q"><span class="num">1</span>Why is this called a Harness?</div>
+      <p class="oneliner">Safety-harness metaphor — restrains what the AI can touch. No connection to Harness the company.</p>
+      <p class="full-body">It's a safety-harness metaphor, not a reference to Harness the CI/CD company — there's no sponsor tie-in in the code. From the README: <i>"AI provides intelligence. The harness provides trust boundaries. Deterministic code provides authority."</i> The harness restrains what the AI is allowed to touch, the way a climbing harness restrains a fall.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">2</span>Why not let the LLM make the decision directly?</div>
+      <p class="oneliner">The Controller decides — a ~40-line deterministic state machine, no model call inside it, ever.</p>
+      <p class="full-body">Because an LLM can be unavailable, malformed, or confidently wrong, and none of those failure modes should be able to move a real truck's cooling system. The <span class="mono">Controller</span> is a ~40-line deterministic state machine over <span class="mono">(gate result, critic result)</span> — three states, first match wins, no model call inside it. The model's opinion is one input to a decision it never makes.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">3</span>What makes this different from a fleet dashboard?</div>
+      <p class="oneliner">A dashboard shows data; this decides what's trustworthy, checks the AI's reasoning, and gates the one action a human must approve.</p>
+      <p class="full-body">A dashboard shows you data. This decides — deterministically — whether evidence is trustworthy, whether an AI risk read is internally consistent with that evidence, and whether an action gets requested at all, then hands the one action that can happen to a human for approval. The product is the boundary around the AI, not the AI itself.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">4</span>How does your Trust Gate work?</div>
+      <p class="oneliner">4 stages: schema check → freshness (&lt;120s fresh) → provenance (right source) → normalize (dedupe to freshest).</p>
+      <p class="full-body">Four deterministic stages before anything reaches the model: schema validation, a freshness check (fresh &lt;120s / stale 120–300s / invalid ≥300s, excluded), a provenance check (each signal has exactly one authorized source agent — wrong-source readings are dropped even if an agent were compromised), and a normalizer that keeps only the freshest reading per signal so the confidence denominator can't be inflated by duplicates.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">5</span>Why use multiple agents?</div>
+      <p class="oneliner">Two agents, disjoint scopes — isolation enforced by the absence of an import, not by a permission check.</p>
+      <p class="full-body">Two agents, <span class="mono">VehicleObserver</span> and <span class="mono">EnvironmentObserver</span>, each reads a disjoint slice of world state and holds no reference to the other, to the critic, or to any action function. That's not a convention — it's the absence of an import, verified at runtime by an AST probe and enforced by a dedicated isolation test. It demonstrates least-privilege by construction, not by policy.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">6</span>How do you prevent hallucinations from causing unsafe actions?</div>
+      <p class="oneliner">Gate the evidence → schema-validate the output → Verifier cross-checks claims → Controller can only halt, never act.</p>
+      <p class="full-body">Four independent layers, each of which alone would catch a large class of failure: the Trust Gate excludes bad evidence before the model sees it; the model's output must satisfy a strict schema (<span class="mono">extra="forbid"</span>) or it's rejected outright, never coerced; a Verifier re-checks the model's claims against the same trusted evidence (self-consistency, evidence grounding, contradiction support); and the Controller can only halt or continue — it cannot execute anything the model said.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">7</span>What's deterministic vs. AI-driven?</div>
+      <p class="oneliner">Only the Critic calls an LLM; gate, correlation, verifier, controller, confidence, and policy are all plain deterministic code.</p>
+      <p class="full-body">Deterministic: the Trust Gate, the Correlation Engine, the Verifier, the Controller, confidence scoring, and policy packs — none of these call a model. AI: exactly one component, the Critic/Risk Assessment Engine, and even it only ever sees pre-gated structured evidence, never raw telemetry, tools, or an action reference.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">8</span>How would this scale beyond a single truck or fleet?</div>
+      <p class="oneliner">Single-process SQLite today, by design — RunState and the Event Bus already draw the service boundaries for later.</p>
+      <p class="full-body">Honestly: today it's a single-process FastAPI service over SQLite — a deliberate hackathon posture, documented as such in the code. The scaling path is architecturally clean because every stage already writes into one <span class="mono">RunState</span> through an event bus: swap SQLite for Postgres, move the Supervisor's per-vehicle runs onto a worker queue, and the Trust Gate / Critic / Controller boundaries become service boundaries with no interface change.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">9</span>Why build your own runtime instead of an existing agent framework?</div>
+      <p class="oneliner">Because "the model cannot act" has to be a framework-level guarantee here, not an app-level convention bolted onto one.</p>
+      <p class="full-body">Because the entire point is a runtime where the framework itself enforces "the model cannot act" — that has to be a first-class guarantee of the harness, not a convention layered on top of a general-purpose agent framework. A shared <span class="mono">RunState</span>, an event bus, a bounded retry engine and a cross-run circuit breaker are ~10 small, readable, individually-tested modules; that legibility is the pitch.</p></div>
+
+      <div class="bet"><div class="q"><span class="num">10</span>If you had another month, what would you improve?</div>
+      <p class="oneliner">In order: real user auth, a true re-execution replay, and persistence beyond single-process SQLite.</p>
+      <p class="full-body">Three honest gaps, in order: add real user auth (there's currently none — open CORS, no login, by design for a demo); make "replay" actually re-execute the pipeline against historical evidence instead of re-presenting stored trace data at recorded pace; and move persistence off single-process SQLite so multiple fleets can run concurrently.</p></div>
+    </div>
+
+    <section id="cheat">
+      <h2>Architecture cheat-sheet</h2>
+      <p class="lede">The facts every other answer in this document leans on. Get these exactly right and the rest follows.</p>
+      <div class="cheat">
+        <div class="block">
+          <h3>Run flow</h3>
+          <div class="flow">
+            <span class="stage">Planner</span><span class="arrow">→</span><span class="stage">Supervisor</span><br>
+            &nbsp;&nbsp;<span class="stage">agents</span><span class="arrow">→</span><span class="stage">Trust Gate</span><span class="arrow">→</span><span class="stage">Correlation</span><br>
+            &nbsp;&nbsp;<span class="arrow">→</span><span class="stage">Critic</span><span class="arrow">→</span><span class="stage">Verifier</span><span class="arrow">→</span><span class="stage">Controller</span><br>
+            <span class="arrow">→</span> <span class="stage">Harness</span> persists + requests action on halt<br>
+            <span class="arrow">→</span> <span class="stage">Store / Action Gateway / Audit</span>
+          </div>
+        </div>
+        <div class="block">
+          <h3>Controller states (first match wins)</h3>
+          <div class="kv"><span class="k">1. Agent unavailable</span><span class="v">INSUFFICIENT_DATA</span></div>
+          <div class="kv"><span class="k">2. Critic rejected</span><span class="v">INSUFFICIENT_DATA</span></div>
+          <div class="kv"><span class="k">3. Required evidence missing</span><span class="v">INSUFFICIENT_DATA</span></div>
+          <div class="kv"><span class="k">4. HIGH risk / contradiction</span><span class="v">CRITICAL_HALT</span></div>
+          <div class="kv"><span class="k">5. Otherwise</span><span class="v">AUTO_OPTIMIZE</span></div>
+        </div>
+        <div class="block">
+          <h3>Confidence — real numbers</h3>
+          <div class="kv"><span class="k">Healthy run, both agents</span><span class="v">100%</span></div>
+          <div class="kv"><span class="k">Environment agent down (5/9 signals)</span><span class="v">56%</span></div>
+          <div class="kv"><span class="k">Vehicle agent down (4/9 signals)</span><span class="v">44%</span></div>
+          <div class="kv"><span class="k">Contradiction → CRITICAL_HALT</span><span class="v">78%</span></div>
+          <div class="kv"><span class="k">Corrupt model output</span><span class="v">still 100% — halts on the model axis, not evidence</span></div>
+        </div>
+        <div class="block">
+          <h3>Retry vs. breaker</h3>
+          <div class="kv"><span class="k">Retry Engine scope</span><span class="v">within one run</span></div>
+          <div class="kv"><span class="k">Retry attempts</span><span class="v">2 max, critic call only</span></div>
+          <div class="kv"><span class="k">Circuit Breaker scope</span><span class="v">across runs</span></div>
+          <div class="kv"><span class="k">Trips after</span><span class="v">3 consecutive failures</span></div>
+          <div class="kv"><span class="k">Cooldown</span><span class="v">30s → half-open → closed</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="flags">
+      <h2>Handle-with-care <span class="tag honest">say this straight</span></h2>
+      <p class="lede">Five things the code does <i>not</i> support. Every one of these was checked against the implementation — the honest answer is better than the confident wrong one.</p>
+      <div class="card flag"><div class="qs"><span class="qid">nuance</span></div>
+        <p><b>"Parallel" agents run sequentially in code.</b> The Planner marks both agents safe to run concurrently because their scopes are provably disjoint — but <span class="mono">Supervisor._observe()</span> currently calls them in a plain Python <span class="mono">for</span> loop, not threads or async. If pressed: "the architecture guarantees it's <i>safe</i> to parallelize; the current implementation hasn't needed to yet."</p>
+        <p><b>Replay re-presents, it doesn't re-execute.</b> The Audit Logs page replays a stored decision trace at its recorded stage durations. There's no backend endpoint that reruns the pipeline against historical raw evidence — replay is of already-computed results, not a re-computation.</p>
+        <p><b>There is no user authentication.</b> No login, no session, CORS wide open (<span class="mono">allow_origins=["*"]</span>). This is an explicit demo posture — say so plainly rather than let a judge discover it by asking to log in.</p>
+        <p><b>No named "prompt-injection defense."</b> The defense is structural, not a filter: the Critic only ever receives a small structured JSON array (never free text, never tool access), and its only possible output is a schema-validated <span class="mono">RiskMatrix</span> that a Verifier checks before a state machine even looks at it. Frame it as "reduces blast radius by construction," not "we filter injections."</p>
+        <p><b>No Harness Inc. connection.</b> Grepped for it — nothing. If asked directly, say so; don't imply a sponsor relationship that isn't there.</p>
+      </div>
+    </section>
+
+    <div id="catalog"></div>
+
+    <section id="donotsay">
+      <h2>Do-not-say corrections</h2>
+      <p class="lede">Precise phrasing beats confident phrasing. Each row was checked against the running system.</p>
+      <table class="dnst" id="dnst"></table>
+    </section>
+
+    <footer>Built from the actual codebase — <a href="#" onclick="return false" style="text-decoration:none;color:inherit;cursor:default;">backend/app/*.py</a>, <span class="mono">README.md</span> and <span class="mono">demo/presenter_notes.md</span> — not from memory of what the pitch says. Cross-check any number here against a live run before you quote it on stage.</footer>
+  </main>
+</div>
+
+<div class="flash-overlay" id="flashOverlay" hidden>
+  <div class="flash-modal">
+    <div class="flash-top">
+      <span class="title">Flashcard drill</span>
+      <button class="flash-close" id="flashClose">✕</button>
+    </div>
+    <div class="flash-progress" id="flashProgress"></div>
+    <div id="flashBody"></div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------- Content
+// Each section: {id, title, range, lede, cards:[{qid, q, also, body(html array of <p> strings)}]}
+const SECTIONS = [
+{id:"problem", title:"Problem Statement", range:"Q1–Q10", lede:"Why this exists, for whom, and why AI is load-bearing rather than decorative.",
+ cards:[
+  {qid:"Q1–Q3", q:"What problem are you solving, and why does it matter?", also:"Why can't existing fleet software solve it?",
+   body:["Cold-chain cargo has a narrow safe band (2–6°C in the demo). Existing fleet telematics dashboards show you the numbers; they don't decide anything, and the moment you bolt an LLM onto them to make that decision, you've handed operational authority to a component that can be wrong, unavailable, or malformed — with no structural check on any of the three.",
+   "Existing software fails on one of two sides: pure telemetry dashboards have no reasoning layer at all (a human has to notice a slow drift across ten screens), while naive \"AI agent\" add-ons that read sensors and call an action function collapse reasoning and authority into one untrusted step. Fleet-Harness's answer is a layer that sits between them: gate the evidence, let AI reason over only what's trustworthy, and keep every irreversible action behind a deterministic gate a human ultimately approves."]},
+  {qid:"Q4–Q6", q:"Why do we even need AI here, and what happens without your system?", also:"",
+   body:["AI earns its place doing the one thing deterministic code is bad at: synthesizing several imperfect, partially-conflicting signals into a written risk judgement (\"cooling reports ON but cargo is warm and dwell time is long — here's why that's concerning\"). Without any reasoning layer, that synthesis falls on a human watching a dashboard, which is exactly how slow drifts get missed until the cargo is already spoiled.",
+   "Without the harness specifically — i.e. with AI wired straight to an action — the failure modes get worse, not better: a hallucinated risk read, a stale sensor, or a network hiccup could each independently trigger (or block) a real action with no independent check. \"What happens without your system\" is the demo's entire spine: bad data, bad reasoning, unearned authority — each one is a chapter."]},
+  {qid:"Q7–Q10", q:"Who would actually use this? Is it B2B or B2C? What's the business value? Why cold-chain?", also:"",
+   body:["B2B: fleet operators and 3PLs running temperature-sensitive freight (pharma, food, biologics) where a single spoiled load is an expensive, sometimes regulated, incident. The buyer is an ops/fleet-safety team, not a consumer.",
+   "Business value is asymmetric-risk reduction, not automation-for-its-own-sake: the system's worst-case failure is a refusal to act (a human looks at a screen), versus an unconstrained design whose worst case is spoiled cargo or a disabled cooling unit. Cold-chain was chosen because it has a crisp, checkable physical rule (cooling ON + cargo warm is a contradiction, not a judgement call) that makes \"the harness caught something real\" demonstrable in minutes rather than requiring a domain expert to adjudicate."]}
+ ]},
+
+{id:"overview", title:"Project Overview", range:"Q11–Q20", lede:"The one-minute, thirty-second, and non-technical versions, plus what's yours vs. AI vs. human.",
+ cards:[
+  {qid:"Q11–Q13", q:"Explain it in one minute / thirty seconds / to a non-technical person.", also:"",
+   body:["<b>One minute:</b> \"Two AI agents watch a refrigerated truck's sensors — one on the vehicle, one on the environment — but neither can act on anything, because neither imports the code that would let them. Their readings pass through a Trust Gate that drops stale, wrong-source, or duplicate data before an AI risk model ever sees it. That model writes a risk assessment, never a decision — its output is schema-validated, and a Verifier double-checks it against the same evidence. A deterministic state machine, not the model, decides whether to keep going or halt, and the only action it can ever request — halting automation — waits for a human to approve it. The whole run, every number, is written to an append-only audit log.\"",
+   "<b>Thirty seconds:</b> \"An AI reasons about a cold-chain truck's risk, but a plain state machine — not the AI — decides what happens, and the model is structurally forbidden from ever touching an action.\"",
+   "<b>Non-technical:</b> \"Think of airbags. The car's computer decides to fire them based on sensors; the car doesn't ask the airbag whether it feels like deploying. Same idea — the AI advises, a much simpler and more trustworthy system decides.\""]},
+  {qid:"Q14–Q16", q:"What makes your solution different? Core innovation? What did you build yourselves?", also:"",
+   body:["The core innovation isn't the AI call — it's everything <i>around</i> it: a shared <span class=\"mono\">RunState</span> object every pipeline stage reads and writes (replacing a chain of ad hoc variables), a 4-stage deterministic Trust Gate, a Verifier that checks the model's claims against its own evidence, and a Controller that is provably the only component allowed to request an action. All of it — Supervisor, Planner, RunState, Event Bus, Retry Engine, Circuit Breaker, Trust Gate, Correlation Engine, Critic wrapper, Verifier, Controller, Action Gateway, Policy Engine, Trend/Incident Memory, Audit — is original code in this repo, not a wrapper around an existing agent framework."]},
+  {qid:"Q17–Q20", q:"Which parts are AI? Which are deterministic? What's automatic vs. human?", also:"",
+   body:["Exactly one component calls an LLM: the Critic (Risk Assessment Engine), and only with pre-gated structured evidence. Everything else — gate, correlation, verifier, controller, confidence, policy packs — is plain Python, fully deterministic, individually unit-tested.",
+   "Automatic: continuing normal automation (<span class=\"mono\">AUTO_OPTIMIZE</span>) and creating a low-tier escalation record. Human-required: anything that halts automation (<span class=\"mono\">HALT_AUTOMATION</span> is always human-tier) — approval or rejection with a reason, both durably logged."]}
+ ]},
+
+{id:"harness", title:"Harness Questions", range:"Q21–Q39", lede:"The runtime's own vocabulary — what each named component is and why it exists.",
+ cards:[
+  {qid:"Q21", q:"Why is it called a Harness?",
+   body:["Safety-harness metaphor, spelled out in the README: <span class=\"quote\">\"AI provides intelligence. The harness provides trust boundaries. Deterministic code provides authority.\"</span> No connection found to Harness the CI/CD company — grepped the whole repo for it, nothing."]},
+  {qid:"Q22–Q23", q:"What exactly is the Harness Runtime? Why not just call the LLM directly?",
+   body:["The <span class=\"mono\">Harness</span> class (<span class=\"mono\">backend/app/pipeline.py</span>) is the public entry point: it owns a Supervisor, Planner, RetryEngine, PolicyEngine, TrendEngine and EventBus, runs a full pipeline, persists evidence and the decision, requests an action on halt, and publishes lifecycle events. Calling the LLM directly skips every one of those guarantees — there'd be nothing stopping a malformed or hallucinated response from reaching an action."]},
+  {qid:"Q24–Q26", q:"What does the Supervisor do? Why have a Planner? Why separate planning and execution?",
+   body:["The <span class=\"mono\">Supervisor</span> runs six stages in order — <span class=\"mono\">observe → gate → correlate → assess → verify → decide</span> — timing each one and assembling the execution trace. The <span class=\"mono\">Planner</span> is deliberately thin: it always plans both agents to run concurrently, with a documented, test-backed rationale (their WorldState scopes are provably disjoint). Separating planning from execution means the safety argument (\"these two can run together\") lives in one small, readable, testable place instead of being implicit in however the Supervisor happens to call things."]},
+  {qid:"Q27–Q28", q:"What is RunState? Why centralized state?",
+   body:["<span class=\"mono\">RunState</span> is one shared dataclass every stage reads and writes — evidence, gate results, correlation conflicts, risk matrix, verifier result, confidence, controller state, decision reason, trace. Its own docstring says this is what makes it \"a harness... not a pipeline function\": every stage's contribution is visible in one object rather than threaded through a chain of local variables that has to be inspected function-by-function to reconstruct what happened."]},
+  {qid:"Q29", q:"Why Event Bus?",
+   body:["Every stage <span class=\"mono\">publish()</span>es a typed event rather than calling Audit directly; Audit is just one subscriber. That's the line that matters for extensibility: adding a websocket pusher or a metrics collector later needs zero changes to the Supervisor, because they'd just be another subscriber on the same bus."]},
+  {qid:"Q30–Q32", q:"Why Retry Engine? Why Circuit Breaker? What happens if retries fail?",
+   body:["<span class=\"mono\">RetryEngine</span> retries <i>within</i> one run (max 2 attempts), and only wraps the Critic call — the one call that crosses a real network boundary. <span class=\"mono\">CircuitBreaker</span> tracks failures <i>across</i> runs: 3 consecutive failures trips it OPEN, a 30s cooldown moves it HALF-OPEN, one success closes it again. If retries are exhausted, the Critic call becomes a rejected result (never an exception that crashes the harness) — the Controller then reads that rejection as <span class=\"mono\">INSUFFICIENT_DATA</span>, same as any other missing input."]},
+  {qid:"Q33–Q34", q:"How does isolation work? What does ToolAccessDenied prove?",
+   body:["Isolation is enforced by <i>absence</i>, not permission: <span class=\"mono\">agents.py</span> has no import of <span class=\"mono\">actions.py</span> at all — there's no object to call, so there's nothing to misconfigure. That's checked two ways: statically, <span class=\"mono\">security.py</span> parses the real <span class=\"mono\">agents.py</span> AST and probes a live agent instance for 7 attack-shaped attribute names; and by test, <span class=\"mono\">tests/test_isolation.py</span> fails the build the moment anyone wires an action onto an agent. <span class=\"mono\">ToolAccessDeniedError</span> is the narrower, tool-level version of the same idea: each tool has an explicit <span class=\"mono\">allowed_agents</span> list, and <span class=\"mono\">POST /simulate/unauthorized-tool</span> live-demonstrates Agent A being denied when it tries to call Agent B's tool."]},
+  {qid:"Q35–Q39", q:"Why is your runtime reusable? Can another AI plug in? Could Claude / Gemini replace GPT? Can multiple LLMs run together?",
+   body:["The Critic is a pluggable <span class=\"mono\">CriticBackend</span> interface — swap <span class=\"mono\">MockCritic</span> for <span class=\"mono\">OpenRouterCritic</span> (or any backend that returns the same <span class=\"mono\">RiskMatrix</span> shape) with zero changes to the gate, correlation engine, verifier, or controller. In practice the model is routed through OpenRouter with an ordered fallback list of free models, so swapping models is already exercised code, not a hypothetical — the same mechanism would let Claude, Gemini, or any OpenRouter-hosted model serve as the Critic. Running multiple models at once isn't implemented today, but the schema-first contract (strict Pydantic validation, no self-reported confidence) means a second model's output would be validated identically — there's no code path that trusts one model more than another by name."]}
+ ]},
+
+{id:"multiagent", title:"Multi-Agent Questions", range:"Q40–Q50", lede:"Why two, not one or ten — and what independence actually means here.",
+ cards:[
+  {qid:"Q40, Q50", q:"Why two agents? Why not a single agent?",
+   body:["A single agent reading everything has no structural reason to keep its concerns separate — nothing stops it from correlating cargo and ambient readings in ways that make an eventual isolation violation look reasonable. Two agents with genuinely disjoint scopes (vehicle vs. environment) make the isolation claim checkable: <span class=\"mono\">VehicleObserver</span> literally cannot see <span class=\"mono\">ambient_temperature</span>, because it never reads <span class=\"mono\">world.environment</span> at all."]},
+  {qid:"Q41–Q42", q:"Can you support ten agents? How would more agents communicate?",
+   body:["Architecturally yes — the Planner's parallel-safety argument is per-pair disjointness of WorldState scopes, which generalizes to N agents as long as each new agent's scope doesn't overlap an existing one. They wouldn't communicate with each other at all, by design; today's two agents don't, and adding a communication channel between agents would be the first thing to break the isolation argument, so it's deliberately absent rather than merely unbuilt."]},
+  {qid:"Q43–Q45", q:"How does the Supervisor coordinate them? Are they independent? Why parallel execution?",
+   body:["The Supervisor dispatches each agent, and each independently returns a list of Evidence with no visibility into the other's output; the Supervisor concatenates the results. \"Parallel\" is currently a scheduling claim, not literal threaded execution — worth being precise about if a judge presses: the Planner marks them safe to run concurrently because their scopes are provably disjoint (a test asserts this), but the current Supervisor loop calls them sequentially in Python."]},
+  {qid:"Q46–Q49", q:"What if one agent crashes? What if agents disagree? Can an agent lie? How do you detect contradictions?",
+   body:["An unavailable agent doesn't crash the run — <span class=\"mono\">AgentUnavailable</span> is caught and the Controller reads it as <span class=\"mono\">INSUFFICIENT_DATA</span>, with confidence dropping to the fraction of expected signals still present (56% or 44% depending on which agent). Agents can't meaningfully \"disagree\" since they report disjoint signals, not overlapping opinions — but their combined readings can be <i>physically</i> inconsistent (cooling reports ON while cargo is warm), which the Correlation Engine catches deterministically, before the model ever reasons about it, and which the model can independently flag as a contradiction that the Verifier then checks is actually supported by ≥2 trusted evidence items."]}
+ ]},
+
+{id:"trustgate", title:"Trust Gate", range:"Q51–Q60", lede:"Four stages, all deterministic, all run before the model sees anything.",
+ cards:[
+  {qid:"Q51–Q53", q:"What is the Trust Gate? Why is it necessary? What are its stages?",
+   body:["<span class=\"mono\">gate.py</span>'s <span class=\"mono\">evaluate()</span> — deterministic, no LLM call. It's necessary because an AI reasoning over stale, wrong-source, or duplicated data is confidently wrong about good data just as easily as bad; garbage in, garbage out applies to risk assessments too. Four stages: schema validation, freshness check, provenance check, evidence normalization."]},
+  {qid:"Q54", q:"Why schema validation?",
+   body:["By the time evidence reaches the gate it's already a validated Pydantic <span class=\"mono\">Evidence</span> object, so this stage is a formal checkpoint reporting \"N records schema-valid\" — cheap insurance that a malformed reading can't silently pass through as if it were trustworthy."]},
+  {qid:"Q55", q:"Why freshness validation?",
+   body:["A correct reading from 10 minutes ago can describe a truck that no longer exists in that state. Readings are classified FRESH (&lt;120s), STALE (120–300s), or INVALID (≥300s) by recomputed age, and stale/invalid readings are excluded with a specific note like \"cargo_temperature: stale (age 240.0s).\""]},
+  {qid:"Q56", q:"Why provenance validation?",
+   body:["Each signal has exactly one authorized source agent (e.g. <span class=\"mono\">cargo_temperature → AGENT_A</span>). If a reading claims a different source, it's excluded as \"wrong source\" — this is a defense-in-depth layer on top of code-level isolation: even if an agent were somehow compromised into emitting another agent's signal, the gate would still exclude it."]},
+  {qid:"Q57, Q59", q:"What is normalization? Can invalid evidence pass?",
+   body:["Normalization dedupes to at most one trusted reading per signal, keeping the freshest — which is what makes the confidence denominator a true upper bound. This exists because property-based fuzz testing found a real bug: without it, a duplicate reading could push trusted-signal count (and therefore confidence) above 100%. After normalization, invalid evidence structurally cannot pass — it's excluded at whichever of the four stages catches it first."]},
+  {qid:"Q58, Q60", q:"What happens if freshness fails? Why validate before AI?",
+   body:["A failed-freshness signal is dropped from trusted evidence and counted toward <span class=\"mono\">missing_required</span> if the policy pack requires it — which can alone push the Controller to <span class=\"mono\">INSUFFICIENT_DATA</span>. Validating before the model runs means the model's entire job is reasoning over evidence that's already known-good; it never has to (and structurally cannot) assess data quality itself, which keeps its one job small and checkable."]}
+ ]},
+
+{id:"riskengine", title:"Risk Assessment Engine", range:"Q61–Q70", lede:"The one component in the pipeline that calls an LLM — and exactly how little authority it has.",
+ cards:[
+  {qid:"Q61–Q63", q:"What does it actually do? Why rename Critic? Is it another LLM?",
+   body:["It's the single component that produces a written risk judgement from gated evidence — risk level, whether a contradiction is present, which factors drove the read, what evidence is missing, and a reasoning summary. \"Risk Assessment Engine\" and \"Critic\" name the same class in code (<span class=\"mono\">critic.py</span>); the renaming in the prompt reflects framing, not a different component. Yes — it's the only LLM call anywhere in the decision path, and by design it has no authority: it never sees raw world state, never gets a tool, never gets a reference to an action."]},
+  {qid:"Q64–Q65", q:"How does it detect hallucinations? What if AI contradicts the evidence?",
+   body:["It doesn't detect its own hallucinations — a downstream <span class=\"mono\">Verifier</span> does, by checking the model's claims against the same trusted evidence it was given: self-consistency (a HIGH risk level requires listed risk factors; LOW forbids a contradiction flag), evidence grounding (every risk factor must reference a signal actually present), and contradiction-flag verification (a claimed contradiction needs ≥2 supporting trusted evidence items). If the model contradicts the evidence in a way the Verifier catches, that result is treated as untrustworthy input to the Controller, same as a rejected schema."]},
+  {qid:"Q66–Q68", q:"How do you compute confidence? What factors affect it? Why multiplicative?",
+   body:["Confidence is a composite of five factors, none self-reported by the model: evidence completeness (trusted signals ÷ expected signals), whether the Verifier passed, the gate's exclusion ratio, correlation conflicts, and the vehicle's historical reliability (from Trend Memory). Multiplying rather than averaging means one bad factor can't be diluted by four good ones — a single serious problem (say, a rejected critic output) should visibly tank confidence, not get smoothed over."]},
+  {qid:"Q69–Q70", q:"Can confidence be manipulated? Why not average confidence?",
+   body:["Not by the model — the schema explicitly forbids a <span class=\"mono\">confidence</span> field (<span class=\"mono\">extra=\"forbid\"</span>), so there's no channel for the model to state or influence it directly; every input to confidence is independently computed by the harness. Averaging was rejected for the same reason multiplicative was chosen: an average lets a strong factor mask a weak one, and the whole point of confidence here is that it reflects the weakest link, not the mean."]}
+ ]},
+
+{id:"authority", title:"Decision Authority", range:"Q71–Q80", lede:"The Controller — a plain state machine, and the only thing allowed to request an action.",
+ cards:[
+  {qid:"Q71–Q73", q:"What is Decision Authority? Why deterministic? Why not AI?",
+   body:["The <span class=\"mono\">Controller</span>'s <span class=\"mono\">decide()</span> function — a pure state machine over <span class=\"mono\">(gate result, critic result)</span>, no model call. It's deterministic because the one thing that must never depend on a model's mood is whether an action happens; an AI making that call reintroduces exactly the risk (unavailability, malformation, confident wrongness) the rest of the harness exists to contain."]},
+  {qid:"Q74", q:"What states exist?",
+   body:["Three: <span class=\"mono\">AUTO_OPTIMIZE</span>, <span class=\"mono\">INSUFFICIENT_DATA</span>, <span class=\"mono\">CRITICAL_HALT</span>. (If you've seen prep material listing a fourth state — there isn't one; this is confirmed against the schema and both demo scripts.)"]},
+  {qid:"Q75–Q77", q:"What causes Critical Halt? What is Insufficient Data? What is Auto Execute?",
+   body:["Five rules, first match wins: (1) an agent is unavailable, (2) the critic's output was rejected, or (3) required evidence is missing/untrusted — each of those is <span class=\"mono\">INSUFFICIENT_DATA</span>. (4) Confirmed risk — <span class=\"mono\">risk_level == HIGH</span> or a verified contradiction — is <span class=\"mono\">CRITICAL_HALT</span>, and this is the <i>only</i> branch that sets <span class=\"mono\">request_action=True</span>. (5) Otherwise, <span class=\"mono\">AUTO_OPTIMIZE</span> — automation continues."]},
+  {qid:"Q78–Q80", q:"Why a state machine? How is safety guaranteed? Can AI bypass it?",
+   body:["A state machine is auditable in a way a model call never is — the whole rule set is readable in about forty lines, first-match-wins, no branch calls out to anything non-deterministic. Safety comes from that combination: the Controller is documented as \"the only component permitted to request an action, and only on CRITICAL_HALT.\" AI can't bypass it because there's no code path from the Critic to an action — the Critic's output is just one of the two inputs the Controller reads; it has no execute method to call."]}
+ ]},
+
+{id:"approval", title:"Human Approval", range:"Q81–Q86", lede:"What is and isn't automatic once the Controller halts.",
+ cards:[
+  {qid:"Q81–Q83", q:"When is human approval required? Why? Why not automate everything?",
+   body:["Only <span class=\"mono\">HALT_AUTOMATION</span> requires a human — it's always human-tier, unconditionally. A lower-stakes action, <span class=\"mono\">CREATE_ESCALATION_RECORD</span>, is auto-tier and may execute immediately. The split exists because halting automation on a live truck is the one action with real operational consequence either way (halt too eagerly and you've disrupted a fine delivery; halt too late and cargo is at risk) — that tradeoff belongs to a person with context the harness doesn't have, not to a policy default."]},
+  {qid:"Q84–Q86", q:"What happens after approval? What if approval never comes? Who approves?",
+   body:["Approved actions move <span class=\"mono\">PENDING_APPROVAL → APPROVED → EXECUTED</span>, and \"executed\" today means creating an immutable escalation record — it does not touch any real fleet system (the code explicitly marks a production Action Gateway as a future seam behind scoped credentials). If approval never comes, the action simply sits <span class=\"mono\">PENDING_APPROVAL</span> indefinitely — nothing times out or auto-executes past a human's decision. In the demo, approval is a named operator role (<span class=\"mono\">ops@fleet</span>); rejection requires a reason, and both are recorded as durably as an approval — \"a decision not to act is still a decision.\""]}
+ ]},
+
+{id:"policy", title:"Policy Packs", range:"Q87–Q95", lede:"How domain knowledge is kept out of the deterministic core.",
+ cards:[
+  {qid:"Q87–Q89", q:"What are Policy Packs? Why separate policy? Why not hardcode rules?",
+   body:["A <span class=\"mono\">PolicyPack</span> bundles everything domain-specific: which signals exist and who's authorized to report them, which are required, the freshness thresholds, the correlation rules, and the reasoning function the mock critic uses. Keeping this out of the gate/correlation/verifier/controller is the whole claim behind \"nothing in the deterministic core knows what cold chain is\" — those four modules contain zero cold-chain constants, which is provable by swapping the pack and watching the required-signal set and reasoning change with no code edits to them."]},
+  {qid:"Q90–Q91", q:"Can customers define policies? How easy is adding a new pack?",
+   body:["Today, packs are registered in a Python dict (<span class=\"mono\">policy_packs.py</span>'s <span class=\"mono\">REGISTRY</span>), not a customer-facing config UI — so \"can a customer define one\" is honestly \"not yet self-serve, but the seam is real\": the code itself calls the current policy layer a <span class=\"mono\">[FUTURE]</span> point that becomes an OPA/rego policy bundle in production. Adding a pack today means writing one dataclass instance with the five fields above — no touching gate, correlation, critic, or controller."]},
+  {qid:"Q92–Q95", q:"Could hospitals / aviation / finance / manufacturing use this?",
+   body:["Structurally, yes — the pattern (gate untrusted evidence, let AI reason only over what's trusted, keep a deterministic authority boundary around any action, require human approval for the consequential ones) doesn't assume cold-chain physics. What would need to change per domain is exactly what a policy pack captures: the signal vocabulary, the freshness tolerances, and the correlation rules — the two shipped packs (cold_chain, tyre_safety) are the proof-of-concept for that portability, demonstrated live by running the identical world state through both and getting different outcomes for a principled reason (excluded-as-unknown signals, not judged-as-safe signals)."]}
+ ]},
+
+{id:"memory", title:"Memory", range:"Q96–Q100", lede:"Two read-side derivations over the same stored history — nothing new gets written here.",
+ cards:[
+  {qid:"Q96–Q97", q:"What does Memory store? Why trend memory?",
+   body:["\"Memory\" is really two separate subsystems. Trend Memory (<span class=\"mono\">TrendEngine</span>) answers \"is this signal drifting?\" — it reads past decisions for a vehicle, computes direction (rising/falling/flat) and delta for one signal, and derives a <span class=\"mono\">reliability_score()\</span> (recent non-halt rate) that feeds directly into confidence's historical-reliability factor. It exists because a single snapshot can't tell you whether cargo temperature is trending toward trouble or just noisy."]},
+  {qid:"Q98–Q99", q:"What is Incident Memory? Why separate memories?",
+   body:["Incident Memory answers a different question — \"what actually went wrong, and was it resolved?\" — by joining past <span class=\"mono\">CRITICAL_HALT</span> decisions with the resolution status of the matching action (pending / approved / rejected / executed, by whom, when). They're kept separate because they answer genuinely different operator questions (a drifting-but-not-yet-halted signal vs. a fully resolved incident), and conflating them would blur \"is this getting worse\" with \"did we already deal with this.\""]},
+  {qid:"Q100", q:"How is Memory used?",
+   body:["Both are pure read-side views over the same <span class=\"mono\">decisions</span>/<span class=\"mono\">actions\</span> tables already written by the audit layer — neither module persists anything new. Trend feeds confidence computation directly; Incident Memory feeds the Audit Logs UI and a per-vehicle incident history endpoint."]}
+ ]},
+
+{id:"audit", title:"Audit", range:"Q101–Q106", lede:"Append-only by design, with one real concurrency bug the team found and fixed.",
+ cards:[
+  {qid:"Q101–Q103", q:"Why immutable audit? What is recorded? Can logs be modified?",
+   body:["Every run's evidence, gate result, risk matrix, verifier result, decision, and every action-lifecycle transition is written to an append-only SQLite table — rows are never <span class=\"mono\">UPDATE</span>d or <span class=\"mono\">DELETE</span>d, by explicit design, so an incident review sees exactly what the harness saw and decided, not a summary of it. There's no exposed path to modify a written row; the only supported way to clear history is a full reset that wipes the whole store, not a selective edit."]},
+  {qid:"Q104–Q106", q:"Why replay? Why replay instead of rerunning? What if replay differs?",
+   body:["Replay exists because every run already stores everything needed to reconstruct it (raw evidence, full decision, the stage-by-stage trace) — the docstring calls this what makes replay \"nearly free.\" Be precise here: today's replay (Audit Logs page) re-presents that stored trace at its recorded stage durations — it is not a backend re-execution of the pipeline against historical inputs, so \"what if replay differs\" doesn't currently apply; there's nothing being recomputed to differ. A true re-execution replay is a documented next step, not a shipped feature."]}
+ ]},
+
+{id:"analytics", title:"Analytics", range:"Q107–Q110", lede:"Every metric is derived from stored decisions — no separate counters to drift out of sync.",
+ cards:[
+  {qid:"Q107–Q108", q:"Why analytics? What metrics matter?",
+   body:["Analytics exists to answer \"is the harness actually refusing when it should, and how often\" at a glance rather than by reading raw audit rows. Thirteen metrics are computed on demand from the store — run totals, per-state counts, critic-rejection and evidence-rejection counts, retries, circuit-breaker trips, action counts by outcome, average confidence, average latency, success rate."]},
+  {qid:"Q109–Q110", q:"Why decision funnel? How would operators use analytics?",
+   body:["The Decision Funnel (runs → evidence complete → risk assessed → verifier passed → automation continued) makes the harness's core behavior visible as a shape: the drop-off between stages is exactly where the harness refused to proceed, so a shrinking funnel step is a decision not taken, not a bug. An operator would use it to spot a fleet-wide pattern (e.g. a spike in critic rejections suggesting a model or connectivity problem) before it shows up as individual incident reports."]}
+ ]},
+
+{id:"simulation", title:"Simulation Lab", range:"Q111–Q115", lede:"Eleven real fault injections — every one hits actual state, none are staged screenshots.",
+ cards:[
+  {qid:"Q111", q:"Why build Simulation Lab?",
+   body:["Because a harness's claims (\"it refuses instead of guessing\") are only credible if you can break the system in front of the audience and watch the refusal happen live, rather than asserting it. Eleven <span class=\"mono\">/simulate/*</span> endpoints each flip one real piece of state."]},
+  {qid:"Q112–Q113", q:"What failures can you simulate? Why simulate AI glitches?",
+   body:["Agent failure (kill an agent → next run raises <span class=\"mono\">AgentUnavailable</span>), a corrupted model response (a one-shot hardcoded malformed <span class=\"mono\">RiskMatrix</span> payload, missing a required field and carrying a forbidden confidence field, run through the exact same validation path as a real model call), stale/backdated sensor data, a transient critic exception, a forced circuit-breaker trip, direct sensor-value overrides, and two security red-team probes. Simulating AI glitches specifically proves the rejection logic is real: the corrupted payload isn't special-cased, it just fails the same Pydantic validation any bad real-model response would."]},
+  {qid:"Q114–Q115", q:"Why simulate stale data? Why simulate network failures?",
+   body:["Stale-signal simulation backdates a reading's timestamp past the 300s invalid threshold, proving the freshness stage actually excludes old data rather than trusting whatever's most recent. Network-failure simulation covers two distinct behaviors worth keeping straight: a one-shot transient error exercises the Retry Engine (retry within the run), while forcing three failures exercises the Circuit Breaker (stop attempting the call entirely for 30s) — deliberately separate mechanisms, deliberately separately demonstrable."]}
+ ]},
+
+{id:"techarch", title:"Technical Architecture", range:"Q116–Q125", lede:"Stack, storage, API style, and the monolith-vs-microservices question judges always ask.",
+ cards:[
+  {qid:"Q116–Q118", q:"Frontend? Backend? Database?",
+   body:["Frontend: React 18.3 + TypeScript + Vite 5.4, routed with <span class=\"mono\">react-router-dom</span>. Backend: Python, FastAPI, Pydantic v2, uvicorn, httpx for the OpenRouter calls. Database: plain SQLite via the stdlib <span class=\"mono\">sqlite3</span> module — no ORM — explicitly documented in code as \"plenty for a single-process demo/hackathon service.\""]},
+  {qid:"Q119–Q121", q:"APIs? Event architecture? Polling vs. WebSockets?",
+   body:["REST over HTTP throughout. The Event Bus is in-process pub/sub (every stage publishes a typed event; Audit is one subscriber among possibly others) — it is explicitly a seam for a future websocket pusher, not a websocket implementation today. The frontend polls (<span class=\"mono\">setInterval</span>, default 1.5s, adjustable by a demo speed selector) rather than subscribing over a socket."]},
+  {qid:"Q122–Q123", q:"State management? Folder structure?",
+   body:["No Redux or similar — one React Context (<span class=\"mono\">FleetDataContext.tsx</span>) holding state via <span class=\"mono\">useState</span>/<span class=\"mono\">useCallback</span>, refreshed by polling. Backend logic lives in ~25 single-purpose modules under <span class=\"mono\">backend/app/</span> (agents, world, gate, policy_packs, critic, correlation, verifier, controller, actions, store, audit, events, planner, retry_engine, run_state, supervisor, pipeline, main, memory, metrics, incidents, tools, security, confidence); frontend under <span class=\"mono\">frontend/src/</span> with <span class=\"mono\">pages/</span>, <span class=\"mono\">components/</span>, <span class=\"mono\">layout/</span>."]},
+  {qid:"Q124–Q125", q:"How many services? Monolith or microservices?",
+   body:["One — a single FastAPI process holding a single process-wide harness instance, talking to a single SQLite file, served to a single frontend SPA. Explicitly a monolith, explicitly described in the code's own comments as appropriate for \"a single-process demo/hackathon service,\" not a production deployment claim."]}
+ ]},
+
+{id:"ai", title:"AI Questions", range:"Q126–Q133", lede:"Which model, how it fails safely, and why the demo never depends on the network.",
+ cards:[
+  {qid:"Q126–Q128", q:"Which model? Can it run locally? Prompt engineering?",
+   body:["Routed through OpenRouter, default <span class=\"mono\">inclusionai/ling-3.0-flash-fin:free</span>, with three ordered free-tier fallback models tried in sequence if the primary fails. Not local — it's an API call; there's a separate deterministic <span class=\"mono\">MockCritic</span> used by default so the demo never depends on network access, not a locally-hosted model. The system prompt is a single hardcoded string in <span class=\"mono\">critic.py</span> instructing the model to return only JSON matching the RiskMatrix schema, explicitly forbidding a confidence field, and calling out the cooling-on-but-warm-cargo contradiction as a specific thing to watch for."]},
+  {qid:"Q129–Q131", q:"Temperature? How do you reduce hallucinations? How do you validate responses?",
+   body:["Temperature 0, for maximally deterministic sampling on the real-model path. Hallucination reduction is architectural, not prompt-based: the model only ever sees pre-gated structured evidence (nothing to hallucinate details about beyond what's given), its output must satisfy a strict schema or gets rejected outright, and a Verifier separately checks its claims against the same evidence it was given. Validation is Pydantic with <span class=\"mono\">extra=\"forbid\"\</span> — any extra field, missing field, or wrong type is a hard rejection, never a best-effort coercion."]},
+  {qid:"Q132–Q133", q:"What if GPT is unavailable? Model fallback?",
+   body:["<span class=\"mono\">OpenRouterCritic</span> loops through the primary model plus three fallbacks, catching exceptions and trying the next until one succeeds; if all fail, the last exception propagates and becomes a rejected critic result, which the Controller reads as <span class=\"mono\">INSUFFICIENT_DATA</span> — the system degrades to \"halt-and-ask-a-human,\" never to \"guess and proceed.\""]}
+ ]},
+
+{id:"security", title:"Security", range:"Q134–Q140", lede:"What's actually enforced today, and what's an honest gap.",
+ cards:[
+  {qid:"Q134", q:"Can prompts be injected?",
+   body:["There's no named prompt-injection filter, and that's the honest answer — the mitigation is structural, not textual: the model only ever receives a small structured JSON array of <span class=\"mono\">{signal, value, unit, source, status}</span>, never free text and never tool access, and its only possible effect on the system is a JSON object that must pass strict schema validation and three Verifier checks before a state machine even reads it. A fully hijacked response still has no path to calling a tool or taking an action."]},
+  {qid:"Q135", q:"Can attackers bypass policy?",
+   body:["Not through the Critic — its output can only ever become one of two Controller inputs, and the Controller's rule order is fixed code, not data the model can influence. Policy itself is only switchable through a real API call (<span class=\"mono\">POST /policy/active</span>), which today has no auth in front of it — worth flagging honestly as a hackathon-posture gap rather than claiming it's locked down."]},
+  {qid:"Q136–Q140", q:"Data privacy? Authentication? Authorization? Tool permissions? Least privilege?",
+   body:["No user authentication exists — no login, no session, CORS wide open (<span class=\"mono\">allow_origins=[\"*\"]</span>). That's an explicit demo posture the code doesn't try to hide. Tool-level authorization is real, though: each tool has an explicit <span class=\"mono\">allowed_agents</span> list plus a per-tool rate limit (60–120 calls/min), enforced by <span class=\"mono\">ToolRegistry</span> and live-demonstrated by the unauthorized-tool probe. Least privilege is best demonstrated at the agent level: an agent's \"privilege\" isn't a permission it's granted and could lose — it's the absence of an import, which is a stronger and simpler guarantee than a runtime check."]}
+ ]},
+
+{id:"scalability", title:"Scalability", range:"Q141–Q147", lede:"Honest about today's single-process reality; concrete about the path beyond it.",
+ cards:[
+  {qid:"Q141–Q144", q:"One truck? A thousand trucks? Multiple fleets? Multiple regions?",
+   body:["One truck: today's demo, works cleanly. A thousand trucks on a single SQLite-backed process would eventually bottleneck on the single write lock the audit layer takes for every read and write (added deliberately after a real concurrency bug was found) — that lock is correct for a demo's concurrency level but not for fleet-scale throughput. Multiple fleets/regions would want per-fleet or per-region harness instances behind a shared policy-pack registry, since nothing in the pipeline's design assumes a single global world state — <span class=\"mono\">RunState</span> is already scoped per run, per vehicle."]},
+  {qid:"Q145–Q147", q:"Performance bottlenecks? Horizontal scaling? Event throughput?",
+   body:["The clearest current bottleneck is the single SQLite connection guarded by one <span class=\"mono\">threading.Lock\</span> — every store read and write serializes through it. Horizontal scaling would mean: Postgres (or another real DB) in place of SQLite, the Supervisor's per-vehicle runs moved onto a worker queue instead of in-process, and the Event Bus's in-memory ring buffer replaced by a real message bus (Kafka/Redis streams) — none of which requires changing the Trust Gate, Critic, Verifier, or Controller, because they only ever operate on one <span class=\"mono\">RunState\</span> at a time regardless of what's feeding it."]}
+ ]},
+
+{id:"reliability", title:"Reliability", range:"Q148–Q154", lede:"What happens when a dependency actually fails, backed by a real bug that was caught and fixed.",
+ cards:[
+  {qid:"Q148–Q150", q:"What if backend crashes? Network timeout? Corrupt sensor?",
+   body:["SQLite persists to disk, so a backend restart loses no history — decisions, evidence, actions, and the audit trail all survive, confirmed as an explicit design claim in both the README and the demo script. A critic network timeout is caught by the Retry Engine (one retry within the run) and, if it keeps failing, by the Circuit Breaker (stop attempting for 30s) — either way it becomes <span class=\"mono\">INSUFFICIENT_DATA</span>, never a crash. A corrupt sensor reading either fails freshness/provenance at the gate or gets caught by the Correlation Engine's physical-consistency checks."]},
+  {qid:"Q151–Q154", q:"Missing sensor? Partial failure? Retry policy? Recovery?",
+   body:["A missing required signal is exactly what <span class=\"mono\">missing_required\</span> tracks — it alone can force <span class=\"mono\">INSUFFICIENT_DATA\</span> even if every other signal is healthy. Partial failure (one agent down, one healthy) degrades gracefully to a lower-confidence <span class=\"mono\">INSUFFICIENT_DATA\</span> read rather than an all-or-nothing crash — the system already demonstrates 56% and 44% confidence for the two single-agent-down cases. Retry policy is bounded (2 attempts, critic call only) specifically so a genuinely broken dependency fails fast into a human-visible state instead of hanging. Recovery from a breaker trip is automatic after the 30s cooldown, with no manual reset required — a single successful call closes it."]}
+ ]},
+
+{id:"product", title:"Product", range:"Q155–Q160", lede:"What exists today vs. what a real go-to-market would require — stated plainly.",
+ cards:[
+  {qid:"Q155–Q157", q:"Pricing? SaaS? Enterprise?",
+   body:["No pricing model exists in the code or docs — this is a hackathon build, not a priced product, and the honest answer is to say so rather than invent a number. The architecture (single harness instance, pluggable policy packs, pluggable critic backend) is compatible with a SaaS or enterprise-on-prem delivery model, but neither is implemented; today it's one process you run yourself."]},
+  {qid:"Q158–Q160", q:"Cloud? On-prem? Multi-tenant?",
+   body:["Runs anywhere a Python + Node environment can host it — no cloud-specific dependency exists today (OpenRouter is the one external network call, and it's optional). Multi-tenancy isn't implemented: there's one global harness instance per process and one SQLite file; getting to multi-tenant would mean scoping <span class=\"mono\">RunState\</span>, the store, and policy selection per tenant, which is a real but bounded change given how cleanly per-vehicle state is already isolated."]}
+ ]},
+
+{id:"future", title:"Future", range:"Q161–Q165", lede:"What's next, the biggest limitation, and what six focused months would buy.",
+ cards:[
+  {qid:"Q161–Q163", q:"What's next? Production roadmap? Biggest limitation?",
+   body:["Next, in priority order: real user authentication (there is none today), a true re-execution replay (today's replay re-presents stored trace data, it doesn't rerun the pipeline), and moving off single-process SQLite so throughput scales past a demo. The biggest limitation, stated honestly, is that persistence and process topology are demo-shaped — every decision-safety guarantee (the gate, verifier, controller, isolation) is solid and tested; the infrastructure around it is not yet production-hardened."]},
+  {qid:"Q164–Q165", q:"What would you improve? What would you add with six months?",
+   body:["With six months: (1) auth + multi-tenant scoping, (2) a real message bus behind the Event Bus so websocket push and external metrics collectors are trivial additions, (3) a policy-pack authoring UI so a customer can define required signals and correlation rules without touching Python, (4) a third policy pack in a genuinely different domain (not cold-chain-adjacent) to stress-test the \"domain-independent core\" claim harder than tyre_safety does, and (5) literal concurrent agent execution (async/threaded) once there's an actual throughput reason to need it — today correctness doesn't depend on it."]}
+ ]},
+
+{id:"hackathon", title:"Hackathon Questions", range:"Q166–Q172", lede:"Straightforward — answer from your own team's experience, not the code. Use this as a template.",
+ cards:[
+  {qid:"Q166–Q168", q:"What did you finish? Team size? Who built what?",
+   body:["Answer these from your actual team's timeline and division of work — they're about you, not the codebase. What the code supports: a fully working end-to-end pipeline (98 passing tests), a full frontend with 8 pages, 11 live fault-injection endpoints, two working policy packs, and both a mock and a real (OpenRouter) critic backend — so \"what did you finish\" has a genuinely complete system to point to, not a partial demo."]},
+  {qid:"Q169–Q172", q:"Biggest challenge? Biggest technical decision? Most proud of? What surprised you?",
+   body:["A strong, code-backed answer for \"biggest technical decision\": choosing to make the Critic's rejection real (strict schema, <span class=\"mono\">extra=\"forbid\"\</span>, no coercion) rather than best-effort-parsing whatever the model returns — that decision is what makes the corrupt-LLM demo honest instead of staged. For \"what surprised you,\" the evidence-normalizer bug is a genuine, checkable story: property-based fuzz testing found that duplicate readings could push confidence above 100% before normalization was added — a real bug a real testing technique caught, not a hypothetical."]}
+ ]},
+
+{id:"deeparch", title:"Deep Architecture", range:"Q173–Q180", lede:"For the engineer in the room who wants to compare this to LangGraph, AutoGen, or CrewAI.",
+ cards:[
+  {qid:"Q173–Q175", q:"Why event-driven? Why immutable state? Why replay?",
+   body:["Event-driven because it decouples \"a stage happened\" from \"something reacts to it\" — Audit, and eventually a websocket pusher or metrics collector, are all just subscribers on the same bus, so none of them need to be wired into the Supervisor directly. Evidence immutability (append-only, never updated) is what makes an audit trail actually trustworthy for incident review — a log that can be edited after the fact isn't an audit trail. Replay is valuable because it's nearly free given that immutability: everything needed to reconstruct a run is already sitting in the store."]},
+  {qid:"Q176–Q180", q:"Why runtime over workflow? Why not LangGraph / AutoGen / CrewAI? Why build your own?",
+   body:["A workflow engine typically optimizes for \"which step runs next\"; this runtime optimizes for a narrower, harder guarantee — \"which component is allowed to cause a real-world effect,\" enforced structurally rather than by graph configuration. LangGraph/AutoGen/CrewAI are general-purpose multi-agent orchestration frameworks — powerful, but the \"agent cannot act\" guarantee would have to be built and maintained as an application-level convention on top of them, not something the framework itself enforces at the import-graph level the way this codebase does. Building it in-house meant that guarantee could be verified by an actual AST probe against the agent module and a dedicated isolation test — a property that's much harder to assert confidently about a framework's internal execution graph. The tradeoff, honestly: less ecosystem, more code to maintain, in exchange for a guarantee that's legible in ~10 small modules instead of buried in a framework's abstractions."]}
+ ]},
+
+{id:"hard", title:"The Hard Questions", range:"Q181–Q190", lede:"The ones that separate finalists. Answer these slowly and specifically. <span class=\"tag hard\">expect these</span>",
+ cards:[
+  {qid:"Q181", q:"What's the weakest part of your system today?",
+   body:["Two honest candidates, in order: no user authentication at all (the demo trusts anyone who can reach the API), and replay being presentational rather than a true re-execution — pick whichever you can speak to more specifically if asked, but lead with the auth gap since it's the more consequential one."]},
+  {qid:"Q182", q:"If we removed the LLM, what still works?",
+   body:["Everything except the risk-synthesis step: the Trust Gate still excludes bad evidence, the Correlation Engine still catches physical contradictions deterministically, the system would just have no way to reason about the subtler cases correlation rules don't cover — it would default toward <span class=\"mono\">INSUFFICIENT_DATA\</span> (a rejected/missing critic result) rather than silently proceeding. This is a genuinely good answer because it demonstrates the AI is additive, not load-bearing for safety."]},
+  {qid:"Q183–Q184", q:"If the LLM lies convincingly, what happens? Can this system make a dangerous decision?",
+   body:["A convincing lie still has to pass the Verifier's evidence-grounding check — every claimed risk factor must reference a signal actually present in trusted evidence, so a lie about signals that don't exist gets caught structurally, not by the Verifier being clever about \"lying.\" A convincing lie about signals that <i>do</i> exist could pass the Verifier and reach the Controller — but the Controller's worst possible action from a HIGH-risk read is requesting a human-tier halt, which then waits for a person. The honest boundary: this system can be wrong about whether to <i>ask</i ; it cannot itself cause a dangerous real-world action, because no path exists from the model's output to an executed action without a human in between."]},
+  {qid:"Q185–Q186", q:"What assumptions does your architecture rely on? What would fail first at production scale?",
+   body:["Core assumptions: agent scopes stay genuinely disjoint (the isolation guarantee is only as good as this staying true as agents are added), the critic backend always returns either a valid RiskMatrix or a caught exception (never a silent partial success), and evidence timestamps are trustworthy enough that freshness classification means something. At production scale, the first thing to fail is the single SQLite write lock — everything else in the pipeline is stateless per-run and would scale by just running more processes."]},
+  {qid:"Q187–Q188", q:"Why should anyone trust AI after seeing hallucinations? Why do you believe deterministic policy is enough?",
+   body:["Because the pitch was never \"trust the AI\" — it's \"don't have to.\" The corrupt-LLM demo exists specifically to show the system's confidence in itself, not in the model: confidence stays at 100% (evidence was complete) while the decision correctly drops to <span class=\"mono\">INSUFFICIENT_DATA\</span> on a separate axis (the model failed). Deterministic policy is enough for the one job it's given — deciding whether to act — precisely because that job is deliberately kept small and legible (three states, five rules, one control variable). It isn't claimed to be enough for everything; reasoning over ambiguous, multi-signal evidence is explicitly left to the model."]},
+  {qid:"Q189", q:"What evidence convinced you this architecture is correct?",
+   body:["Two concrete, checkable things, not a feeling: 98 passing tests including a dedicated isolation test that fails the build if an agent ever gets a reference to an action, and a real bug (the evidence-normalizer gap) that property-based fuzz testing caught before it shipped — proof the testing approach actually finds the class of bug this architecture is supposed to prevent, not just the bugs it was already looking for."]},
+  {qid:"Q190", q:"If Harness Engineering wanted to adopt one idea from your project tomorrow, which would you recommend?",
+   body:["The Verifier pattern: re-checking a model's output against the same structured evidence it was given, independent of and after strict schema validation. It's cheap (three deterministic checks, no extra model call), it's the layer that catches a model being schema-valid but substantively wrong, and it generalizes to any pipeline where an LLM's conclusion needs to be checked against the facts it claimed to reason from — not specific to fleet or cold-chain at all."]}
+ ]}
+];
+
+const DO_NOT_SAY = [
+ ["\"The AI decides when to halt.\"", "The AI produces a risk assessment; the Controller decides."],
+ ["\"Confidence drops to zero when an agent dies.\"", "It drops to the share of expected evidence that survived — 56% (environment agent down, 5/9 signals) or 44% (vehicle agent down, 4/9 signals)."],
+ ["\"The halt is 100% confidence.\"", "78%. A verified contradiction lowers confidence; it never raises it."],
+ ["\"The system executes a cooling override.\"", "It creates an escalation record, and only after a human approves."],
+ ["\"The Verifier re-runs the model.\"", "It runs three deterministic checks on the model's output against the trusted evidence — no second model call."],
+ ["\"The Circuit Breaker retries.\"", "The Retry Engine retries, within a run; the breaker stops the call being attempted at all, across runs."],
+ ["\"Tyre Safety catches a tyre failure in the demo.\"", "The demo shows the pack changing what's required, excluded, the denominator, and the reasoning function — the shipped world states don't include a tyre-blowout scenario."],
+ ["\"Agents run in parallel.\"", "They're scheduled as safe-to-run-concurrently (disjoint scopes, test-verified); the current Supervisor loop calls them sequentially in Python."],
+ ["\"Replay re-executes the decision.\"", "It re-presents the already-stored trace at recorded timing — no backend endpoint recomputes a past run."],
+ ["\"This is a Harness (the company) project.\"", "The name is a safety-harness metaphor from the README; no sponsor connection exists in the code."]
+];
+
+// -------------------------------------------------------------- Render
+const catalog = document.getElementById('catalog');
+const navlist = document.getElementById('navlist');
+
+SECTIONS.forEach(sec=>{
+  const s = document.createElement('section');
+  s.id = sec.id;
+  s.innerHTML = `<h2>${sec.title} <span class="range">${sec.range}</span></h2><p class="lede">${sec.lede}</p>`;
+  sec.cards.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.search = (sec.title+' '+c.qid+' '+c.q+' '+(c.also||'')+' '+c.body.join(' ')).toLowerCase().replace(/<[^>]+>/g,' ');
+    card.innerHTML = `<div class="qs"><span class="qid">${c.qid}</span></div>
+      <p class="qtext">${c.q}${c.also ? `<span class="also">${c.also}</span>`:''}</p>
+      ${c.body.map(p=>`<p>${p}</p>`).join('')}`;
+    s.appendChild(card);
+  });
+  catalog.appendChild(s);
+
+  const a = document.createElement('a');
+  a.href = '#'+sec.id;
+  a.innerHTML = `<span>${sec.title}</span><span class="n">${sec.range}</span>`;
+  navlist.appendChild(a);
+});
+
+// pinned nav entries for the intro sections
+['cheat','flags','donotsay'].reverse().forEach(id=>{});
+const introLinks = [
+  {id:'top10', label:'Top ten bet', n:''},
+  {id:'cheat', label:'Cheat-sheet', n:''},
+  {id:'flags', label:'Handle w/ care', n:''}
+];
+introLinks.reverse().forEach(l=>{
+  const a=document.createElement('a');
+  a.href='#'+l.id; a.innerHTML=`<span>${l.label}</span><span class="n">${l.n}</span>`;
+  navlist.insertBefore(a, navlist.firstChild);
+});
+const dnstLink = document.createElement('a');
+dnstLink.href='#donotsay'; dnstLink.innerHTML='<span>Do-not-say list</span><span class="n"></span>';
+navlist.appendChild(dnstLink);
+
+// do-not-say table
+const dnst = document.getElementById('dnst');
+DO_NOT_SAY.forEach(([no,yes])=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML = `<td class="no">✕ ${no}</td><td class="yes">✓ ${yes}</td>`;
+  dnst.appendChild(tr);
+});
+
+// ---------------------------------------------------------------- Search
+const input = document.getElementById('q');
+const hitcount = document.getElementById('hitcount');
+const allCards = ()=>Array.from(document.querySelectorAll('.card'));
+const allSections = ()=>Array.from(document.querySelectorAll('#catalog > section'));
+
+input.addEventListener('input', ()=>{
+  const term = input.value.trim().toLowerCase();
+  let hits = 0;
+  if(!term){
+    allCards().forEach(c=>c.hidden=false);
+    allSections().forEach(s=>s.hidden=false);
+    document.getElementById('top10').hidden=false;
+    document.getElementById('flags').hidden=false;
+    hitcount.textContent='';
+    return;
+  }
+  allSections().forEach(sec=>{
+    let sectionHits = 0;
+    sec.querySelectorAll('.card').forEach(c=>{
+      const match = c.dataset.search.includes(term);
+      c.hidden = !match;
+      if(match){sectionHits++; hits++;}
+    });
+    sec.hidden = sectionHits===0;
+  });
+  document.getElementById('top10').hidden = true;
+  document.getElementById('flags').hidden = true;
+  hitcount.textContent = hits + (hits===1?' match':' matches');
+});
+
+// active nav highlight on scroll
+const navA = Array.from(navlist.querySelectorAll('a'));
+const targets = navA.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const obs = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      navA.forEach(a=>a.classList.remove('active'));
+      const idx = targets.indexOf(en.target);
+      if(idx>-1) navA[idx].classList.add('active');
+    }
+  });
+},{rootMargin:'-15% 0px -70% 0px'});
+targets.forEach(t=>obs.observe(t));
+</script>
