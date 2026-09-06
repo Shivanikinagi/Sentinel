@@ -252,3 +252,7 @@ scripts/demo.py
 `GET /events/types` · `GET /events/recent`
 
 Interactive docs at `http://localhost:8000/docs`.
+
+---
+
+Last verified end-to-end: 2026-09-06.

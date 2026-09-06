@@ -8,6 +8,8 @@ error). Use this to confirm your key + model before wiring it into the demo.
 
 If OPENROUTER_API_KEY is unset it will tell you and exit — the app still runs on
 the deterministic MockCritic without it.
+
+Last verified: 2026-09-06.
 """
 from __future__ import annotations
 

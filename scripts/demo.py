@@ -7,6 +7,8 @@ Usage:
     python scripts/demo.py                 # pause between scenes (presenter-paced)
     python scripts/demo.py --auto          # run straight through
     python scripts/demo.py --base URL      # point at another host
+
+Last verified: 2026-09-06.
 """
 from __future__ import annotations
 

@@ -8,6 +8,8 @@ two clients, malformed request bodies, etc).
 
     python scripts/fuzz_api.py --requests 300
     python scripts/fuzz_api.py --requests 300 --base http://localhost:8000
+
+Last verified: 2026-09-06.
 """
 from __future__ import annotations
 
