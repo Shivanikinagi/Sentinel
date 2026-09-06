@@ -51,11 +51,12 @@ export function TimelineView() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span className="font-mono text-muted">Run ID: {decision.run_id}</span>
-          <button className="link-btn" disabled={replaying} onClick={replay}>
+          <button className="link-btn" disabled={replaying} onClick={replay} title="Re-presents this run's recorded trace — it does not re-execute the harness.">
             {replaying ? "Replaying…" : "▶ Replay Incident"}
           </button>
         </div>
       </div>
+      <div className="tech-caption" style={{ margin: "-6px 0 8px" }}>Replays the recorded trace above — it does not re-run the harness.</div>
 
       <div className="timeline-steps">
         {chain.slice(0, visibleCount).map((step, idx) => {

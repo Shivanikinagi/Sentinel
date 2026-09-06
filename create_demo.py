@@ -66,6 +66,17 @@ BEAT_GAP = 0.30       # breath between narration lines
 VOICE = "Microsoft David Desktop"
 VOICE_RATE = 2        # SAPI -10..10; 2 measures at ~176 wpm
 
+# This ffmpeg build has libfreetype and libass but no usable fontconfig on
+# Windows: drawtext silently falls back to a serif face, and libass cannot
+# resolve a font by name. Both filters are therefore pointed at real files.
+FONT_CANDIDATES = [
+    ("C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/segoeui.ttf", "Segoe UI"),
+    ("C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf", "Arial"),
+    ("C:/Windows/Fonts/calibrib.ttf", "C:/Windows/Fonts/calibri.ttf", "Calibri"),
+]
+FONT_BOLD = FONT_REGULAR = ""
+FONT_NAME = "Segoe UI"
+
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -123,130 +134,171 @@ class Act:
 
 
 def build_acts() -> list[Act]:
+    """Fleet-Harness hackathon pitch — Script B (submission cut), rebuilt
+    against the redesigned frontend: the old scene-preset buttons are gone,
+    replaced by the Shipment Evaluation form (a "Scenario" dropdown + real
+    telemetry fields, submitting POST /simulate/shipment then POST /runs in
+    one click) and the new 8-stage Live Runtime Pipeline visualization. Every
+    click hits a real endpoint on the real running app — nothing is staged,
+    including the Verifier -> Risk Assessment Engine feedback loop, which is
+    genuinely armed via /simulate/verifier-feedback before that run executes."""
     A: list[Act] = []
 
+    SCENARIO_SELECT = ".shipment-form-grid label.field:has-text('Scenario') select"
+    POLICY_SELECT = ".shipment-form-grid label.field:has-text('Policy Pack') select"
+    EVALUATE_BTN = ".btn-evaluate"
+
+    # The wrapping <label> (not the bare <select>/<input>), so the spotlight
+    # ring includes the field's caption — a judge sees "Scenario" or "Policy
+    # Pack" highlighted, not just an unlabelled box. Used to ring the exact
+    # field a line of narration is talking about, instead of only ringing the
+    # result cards after the fact.
+    SCENARIO_FIELD = ".shipment-form-grid label.field:has-text('Scenario')"
+    POLICY_FIELD = ".shipment-form-grid label.field:has-text('Policy Pack')"
+    COOLING_FIELD = ".shipment-form-grid label.field:has-text('Cooling Status')"
+    CARGO_FIELD = ".shipment-form-grid label.field:has-text('Cargo Temperature')"
+
     # ------------------------------------------------------------- ACT 1
-    A.append(Act("act1", "A normal shipment", [
-        Beat("a1-01",
-             "TRUCK-042 is a refrigerated shipment. Its cargo spoils outside a "
-             "two to six degree band.",
-             lambda c: (c.goto("/"), c.scroll_to(".mission-control")), pad=0.4),
-        Beat("a1-02",
-             "Two agents observe it, isolated in code. The Vehicle Agent reads "
-             "only the truck's sensors; the Environment Agent only route and "
-             "weather. Neither can see the other.",
-             lambda c: c.spot(".mc-parallel-pair")),
-        Beat("a1-03",
-             "Run a check on a normal shipment.",
-             lambda c: (c.spot(None), c.click(".btn-scene-healthy"),
-                        c.run_and_wait(".mc-run-btn")), pad=1.2),
-        Beat("a1-04",
-             "Both agents dispatched in parallel: five signals from the truck, "
-             "four from the environment.",
-             lambda c: c.spot(".mc-flow")),
-        Beat("a1-05",
-             "The Trust Gate grades all nine before any model sees them: schema, "
-             "freshness recomputed from the timestamp, provenance against the one "
-             "authorised source agent, then one reading per signal.",
-             lambda c: (c.spot(None), c.scroll_to(".gate-stage-breakdown")),
-             pad=0.5),
-        Beat("a1-06",
-             "Nine trusted, none excluded. The Risk Assessment Engine reasons "
-             "over that evidence and reports low risk.",
-             lambda c: c.spot(".gate-stage-breakdown")),
-        Beat("a1-07",
-             "And the deterministic controller decides: auto optimise, one "
-             "hundred percent confidence. Dispatch continues.",
-             lambda c: (c.spot(None), c.scroll_to(".banner"), c.spot(".banner")),
-             pad=1.0),
+    A.append(Act("act1", "The problem, the harness, and a healthy run", [
+        Beat("b01",
+             "When AI makes operational decisions, intelligence isn't the hard "
+             "part — trust is. Cargo here spoils outside two to six degrees.",
+             lambda c: c.goto("/")),
+        Beat("b02",
+             "A model deciding alone fails three ways: bad data trusted, bad "
+             "reasoning trusted, authority handed away.",
+             None),
+        Beat("b03",
+             "So: a harness, not an agent.",
+             lambda c: (c.scroll_to(".lrp-card"), c.spot(".lrp-card"))),
+        Beat("b04",
+             "Two observer agents isolated in code: Vehicle sees only the "
+             "truck, Environment only route and weather.",
+             lambda c: (c.spot(".lrp-stage:has-text('Vehicle Agent')"),
+                        time.sleep(1.7),
+                        c.spot(".lrp-stage:has-text('Environment Agent')"))),
+        Beat("b05",
+             "A Trust Gate decides what evidence is admissible.",
+             lambda c: c.spot(".lrp-stage:has-text('Trust Gate')")),
+        Beat("b06",
+             "The Risk Assessment Engine — the only LLM, no tools, no action "
+             "function — audited by a Verifier.",
+             lambda c: (c.spot(".lrp-stage:has-text('Risk Assessment Engine')"),
+                        time.sleep(2.1),
+                        c.spot(".lrp-stage:has-text('Verifier')"))),
+        Beat("b07",
+             "Then a deterministic Decision Authority: the only component "
+             "allowed to request an action.",
+             lambda c: c.spot(".lrp-stage:has-text('Decision Authority')"),
+             pad=0.3),
+        Beat("b08",
+             "Run a normal shipment through the real harness — the same "
+             "agents, the same Trust Gate, the same deterministic controller "
+             "that grades every check on this system, live.",
+             lambda c: (c.spot(None), c.scroll_to(".shipment-form"),
+                        c.select(SCENARIO_SELECT, "healthy"),
+                        c.spot(SCENARIO_FIELD), time.sleep(1.0), c.spot(None),
+                        c.run_and_wait(EVALUATE_BTN))),
+        Beat("b09",
+             "Every stage agrees — auto-optimise, a hundred percent confidence.",
+             lambda c: (c.scroll_to(".final-decision-card"),
+                        c.spot(".final-decision-card")), pad=0.4),
     ]))
 
     # ------------------------------------------------------------- ACT 2
-    A.append(Act("act2", "Contradictory evidence", [
-        Beat("a2-01",
-             "Now a realistic failure. The cooling unit reports ON, while cargo "
-             "climbs to eleven and a half degrees, in forty-one degree heat, "
-             "after thirty-seven minutes stopped.",
-             lambda c: (c.spot(None), c.goto("/"), c.click(".btn-scene-risk"),
-                        c.scroll_to(".mission-control")), pad=0.4),
-        Beat("a2-02",
-             "Both of those cannot be true. Either the cooling unit is not "
-             "actually running, or the cargo sensor is wrong.",
+    A.append(Act("act2", "The contradiction", [
+        Beat("b10",
+             "Now the edge case.",
+             lambda c: (c.spot(None), c.scroll_to(".advanced-controls-toggle"),
+                        c.click(".advanced-controls-toggle"),
+                        c.spot("button:has-text('Verifier Feedback Loop')"),
+                        time.sleep(0.7),
+                        c.click("button:has-text('Verifier Feedback Loop')"),
+                        time.sleep(0.5), c.spot(None))),
+        Beat("b11",
+             "Cooling reports ON while cargo climbs to eleven and a half "
+             "degrees — both cannot be true.",
+             lambda c: (c.scroll_to(".shipment-form"),
+                        c.select(SCENARIO_SELECT, "sensor_contradiction"),
+                        c.spot(COOLING_FIELD), time.sleep(1.5),
+                        c.spot(CARGO_FIELD), time.sleep(1.5),
+                        c.spot(None))),
+        Beat("b12",
+             "Both agents observed it independently.",
              None),
-        Beat("a2-03",
-             "Run it.",
-             lambda c: c.run_and_wait(".mc-run-btn"), pad=1.4),
-        Beat("a2-04",
-             "The agents report independently. Neither can see the other's "
-             "data, so neither can explain the discrepancy away.",
-             lambda c: c.spot(".mc-parallel-pair")),
-        Beat("a2-05",
-             "Correlation catches it deterministically, before the model reasons "
-             "at all: cooling on, cargo above the safe maximum.",
-             lambda c: (c.spot(None), c.scroll_to(".timeline-steps")), pad=0.3),
-        Beat("a2-06",
-             "Then the Critic goes looking for inconsistency, and finds it. High "
-             "risk, contradiction detected, four factors cited.",
-             lambda c: c.spot(".timeline-steps")),
-        Beat("a2-07",
-             "The Verifier then checks the Critic against its own evidence: is "
-             "high risk backed by factors, does every factor map to a real "
-             "signal, is the contradiction supported?",
-             None),
-        Beat("a2-08",
-             "Confidence falls from a hundred percent to seventy-eight: nine "
-             "trusted signals, minus a two signal contradiction penalty, over "
-             "nine expected. Computed in code — the model is forbidden from "
-             "reporting confidence at all.",
-             lambda c: (c.spot(None), c.goto("/runtime"),
-                        c.scroll_to(".confidence-arith"),
-                        c.spot(".confidence-arith")), pad=0.5),
-        Beat("a2-09",
-             "Now the deterministic gate. Three states, five rules, first match "
-             "wins.",
-             lambda c: (c.spot(None), c.goto("/"), c.scroll_to(".banner"))),
-        Beat("a2-10",
-             "Rule four fires: risk high with a contradiction flag. Critical "
-             "halt. Automated dispatch stops.",
-             lambda c: c.spot(".banner"), pad=0.8),
-        Beat("a2-11",
-             "The Critic did not decide that. It produced an assessment. The "
-             "rule decided.",
-             lambda c: c.spot(None)),
+        Beat("b13",
+             "Run it — the exact same seven stages execute again, in the "
+             "exact same order, but this time the evidence disagrees with "
+             "itself.",
+             lambda c: c.run_and_wait(EVALUATE_BTN), pad=0.3),
+        Beat("b14",
+             "Correlation catches it deterministically — Evidence Correlation "
+             "runs before the Critic ever does.",
+             lambda c: (c.scroll_to(".lrp-card"),
+                        c.spot(".lrp-stage:has-text('Evidence Correlation')"))),
+        Beat("b15",
+             "The Verifier rejects the first pass, feeds its reason back. The "
+             "Critic revises; the recheck passes clean.",
+             lambda c: c.spot(".lrp-stage:has-text('Verifier')")),
+        Beat("b16",
+             "Confidence falls to seventy-eight percent, computed in code, "
+             "never self-reported.",
+             lambda c: (c.spot(None), c.scroll_to(".final-decision-card"),
+                        c.spot(".final-decision-card"))),
+        Beat("b17",
+             "The Critic did not decide this — a deterministic rule did. It "
+             "requests a human-tier escalation, not an execution.",
+             lambda c: (c.spot(None), c.scroll_to(".human-approval-card"),
+                        c.spot(".human-approval-card")), pad=0.3),
     ]))
 
     # ------------------------------------------------------------- ACT 3
-    A.append(Act("act3", "Authority", [
-        Beat("a3-01",
-             "Halting dispatch is a human tier action. It does not execute. It "
-             "opens for approval, and waits.",
-             lambda c: (c.scroll_to(".action-card"), c.spot(".action-card")),
-             pad=0.4),
-        Beat("a3-02",
-             "A person approves, and only then is the escalation record created: "
-             "requested, approved, executed, each with an actor and a timestamp.",
-             lambda c: (c.spot(None), c.click(".action-card button.ok")), pad=1.2),
-        Beat("a3-03",
-             "And the AI cannot do any of this itself. Watch.",
-             lambda c: (c.set_technical(True), c.goto("/runtime"),
-                        c.scroll_to("h2:has-text('Isolation Proof')"))),
-        Beat("a3-04",
-             "That is the Vehicle Agent genuinely attempting to call another "
-             "agent's tool. Denied at call time by the tool registry.",
-             lambda c: (c.click("button:has-text('Try: Vehicle')"),
-                        c.spot(".isolation-result")), pad=0.8),
-        Beat("a3-05",
-             "And this red team probe really tries eight different paths from an "
-             "agent to a dispatch action.",
-             lambda c: (c.spot(None), c.goto("/simulation"),
-                        c.scroll_to("h2:has-text('Security Check')"),
-                        c.click("button:has-text('Test the safety lock')")),
-             pad=0.8),
-        Beat("a3-06",
-             "All eight blocked — not by a permission check that could be "
-             "misconfigured. The agents module has no import of the actions "
-             "module. There is no object to call.",
-             lambda c: c.spot(".probe-list"), pad=0.6),
+    A.append(Act("act3", "Failure, isolation, and policy as data", [
+        Beat("b18",
+             "Break it: kill the Environment Agent.",
+             lambda c: (c.spot(None), c.scroll_to(".shipment-form"),
+                        c.select(SCENARIO_SELECT, "missing_sensor"),
+                        c.spot(SCENARIO_FIELD), time.sleep(1.0), c.spot(None))),
+        Beat("b19",
+             "The harness doesn't guess the missing half. It waits for the "
+             "run to finish grading what it actually has: insufficient data, "
+             "fifty-six percent, no action taken.",
+             lambda c: (c.run_and_wait(EVALUATE_BTN),
+                        c.scroll_to(".lrp-card"),
+                        c.spot(".lrp-stage:has-text('Environment Agent')"),
+                        time.sleep(1.6), c.spot(None),
+                        c.scroll_to(".final-decision-card"),
+                        c.spot(".final-decision-card"))),
+        Beat("b20",
+             "The same path handles malformed output and stale evidence.",
+             None),
+        Beat("b21",
+             "And the agents cannot act.",
+             lambda c: (c.spot(None), c.goto("/simulation"))),
+        Beat("b22",
+             "Eight paths from an agent to a dispatch action, all eight "
+             "blocked — nothing to call.",
+             lambda c: (c.scroll_to("h2:has-text('Security Check')"),
+                        c.click("button:has-text('Test the safety lock')"),
+                        c.click("button:has-text('Show how we tested this')"),
+                        c.spot(".probe-list")), pad=0.3),
+        Beat("b23",
+             "The domain is data, not code.",
+             lambda c: (c.spot(None), c.goto("/"),
+                        c.scroll_to(".shipment-form"),
+                        c.select(SCENARIO_SELECT, "healthy"))),
+        Beat("b24",
+             "Switch to tyre safety and the signals and risk logic change.",
+             lambda c: (c.select(POLICY_SELECT, "tyre_safety"),
+                        c.spot(POLICY_FIELD), time.sleep(1.8), c.spot(None))),
+        Beat("b25",
+             "Zero code changes in the gate, the critic, or the controller "
+             "— while this new run finishes executing under the new policy.",
+             lambda c: c.run_and_wait(EVALUATE_BTN), pad=0.3),
+        Beat("b26",
+             "A single agent can't audit its own reasoning, can't deny "
+             "itself authority, and can't degrade safely when it fails.",
+             lambda c: (c.spot(None), c.goto("/"), c.scroll_top()), pad=0.8),
     ]))
 
     return A
@@ -319,6 +371,35 @@ def ff(args: list[str], what: str) -> None:
         log(f"ffmpeg FAILED ({what}):\n{proc.stderr.strip()[-2500:]}", "ERROR")
         raise RuntimeError(f"ffmpeg failed: {what}")
     log(f"ffmpeg ok: {what}")
+
+
+def resolve_fonts() -> None:
+    """Pick the first font family actually present on this machine."""
+    global FONT_BOLD, FONT_REGULAR, FONT_NAME
+    for bold, regular, name in FONT_CANDIDATES:
+        if Path(bold).exists() and Path(regular).exists():
+            FONT_BOLD, FONT_REGULAR, FONT_NAME = bold, regular, name
+            log(f"fonts: {name}")
+            return
+    log("no known sans font found — cards fall back to ffmpeg's default", "WARN")
+
+
+def stage_fonts() -> None:
+    """libass takes a fontsdir, and a bare relative one avoids the Windows
+    drive-colon escaping that breaks the filter parser. The subtitle pass
+    already runs with build/ as its working directory."""
+    fonts = BUILD_DIR / "fonts"
+    fonts.mkdir(parents=True, exist_ok=True)
+    for src in (FONT_BOLD, FONT_REGULAR):
+        if src and Path(src).exists():
+            dst = fonts / Path(src).name
+            if not dst.exists():
+                shutil.copyfile(src, dst)
+
+
+def ff_path(path: str) -> str:
+    """Escape a Windows path for use inside an ffmpeg filter argument."""
+    return path.replace("\\", "/").replace(":", r"\:")
 
 
 def wav_seconds(path: Path) -> float:
@@ -523,6 +604,10 @@ class Ctx:
             log(f"  scroll target missing: {selector}", "WARN")
         self.page.wait_for_timeout(650)
 
+    def scroll_top(self) -> None:
+        self.page.evaluate("window.scrollTo({top: 0, behavior: 'smooth'})")
+        self.page.wait_for_timeout(500)
+
     # -- interaction --------------------------------------------------------
     def click(self, selector: str) -> bool:
         try:
@@ -537,6 +622,17 @@ class Ctx:
             self.failures += 1
             log(f"  CLICK FAILED {selector}: {exc}", "WARN")
             return False
+
+    def select(self, selector: str, value: str) -> None:
+        try:
+            loc = self.page.locator(selector).first
+            loc.scroll_into_view_if_needed(timeout=8000)
+            loc.select_option(value, timeout=8000)
+            self.page.wait_for_timeout(300)
+            log(f"  select {selector} = {value}")
+        except Exception as exc:
+            self.failures += 1
+            log(f"  SELECT FAILED {selector}: {exc}", "WARN")
 
     def set_technical(self, on: bool) -> None:
         label = "Technical" if on else "Simple"
@@ -649,15 +745,85 @@ def srt_time(t: float) -> str:
     return f"{h:02}:{m:02}:{s:02},{ms:03}"
 
 
-def make_card(path: Path, seconds: float, lines: list[tuple[str, int, str]]) -> None:
-    """A card is a solid backdrop plus drawtext lines: (text, size, colour)."""
+# Captions sit in a band across the bottom, so they must not eat the frame.
+CAP_FONT_PX = 34          # real pixels, because the ASS header sets PlayRes
+CAP_SIDE_MARGIN = 210     # px of clear space each side
+CAP_BOTTOM_MARGIN = 54
+CAP_WRAP_CHARS = 82       # ~2 lines for a typical narration line
+
+
+def ass_time(t: float) -> str:
+    cs = int(round(t * 100))
+    h, cs = divmod(cs, 360_000)
+    m, cs = divmod(cs, 6_000)
+    s, cs = divmod(cs, 100)
+    return f"{h:d}:{m:02d}:{s:02d}.{cs:02d}"
+
+
+def wrap_caption(text: str, width: int = CAP_WRAP_CHARS) -> str:
+    """Greedy wrap into ASS hard line breaks, so libass never reflows a line
+    into the middle of the screen."""
+    lines, current = [], ""
+    for word in text.split():
+        candidate = f"{current} {word}".strip()
+        if len(candidate) > width and current:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return "\\N".join(lines)
+
+
+def write_ass(path: Path, cues: list[tuple[float, float, str]]) -> None:
+    """An ASS script whose PlayRes matches the frame, so FontSize is in pixels.
+    Fed an SRT instead, ffmpeg gives libass a 384x288 canvas and every size is
+    silently scaled by 3.75."""
+    header = [
+        "[Script Info]",
+        "ScriptType: v4.00+",
+        "WrapStyle: 2",
+        "ScaledBorderAndShadow: yes",
+        f"PlayResX: {W}",
+        f"PlayResY: {H}",
+        "",
+        "[V4+ Styles]",
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, "
+        "ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, "
+        "MarginL, MarginR, MarginV, Encoding",
+        # BorderStyle 3 = opaque box drawn in OutlineColour (&H30.. = ~81% opaque)
+        f"Style: Caption,{FONT_NAME},{CAP_FONT_PX},&H00F1F5F9,&H00F1F5F9,"
+        f"&H30030712,&H30030712,-1,0,0,0,100,100,0,0,3,7,0,2,"
+        f"{CAP_SIDE_MARGIN},{CAP_SIDE_MARGIN},{CAP_BOTTOM_MARGIN},1",
+        "",
+        "[Events]",
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+    ]
+    events = [
+        f"Dialogue: 0,{ass_time(start)},{ass_time(end)},Caption,,0,0,0,,"
+        f"{wrap_caption(text)}"
+        for start, end, text in cues
+    ]
+    path.write_text("\n".join(header + events) + "\n", encoding="utf-8", newline="\n")
+    log(f"captions: {len(cues)} cues at {CAP_FONT_PX}px on a {W}x{H} canvas")
+
+
+def make_card(path: Path, seconds: float,
+              lines: list[tuple[str, int, str, bool]]) -> None:
+    """A card is a solid backdrop plus drawtext lines:
+    (text, size, colour, bold)."""
     draws = []
-    for i, (text, size, colour) in enumerate(lines):
+    for i, (text, size, colour, bold) in enumerate(lines):
         safe = (text.replace("\\", "\\\\").replace(":", "\\:")
                     .replace("'", "’").replace("%", "\\%"))
-        y = f"(h/2)-{sum(s for _, s, _ in lines) * 0.9 / 2:.0f}+{sum(s for _, s, _ in lines[:i]) * 1.55:.0f}"
+        y = (f"(h/2)-{sum(l[1] for l in lines) * 0.9 / 2:.0f}"
+             f"+{sum(l[1] for l in lines[:i]) * 1.55:.0f}")
+        face = FONT_BOLD if bold else FONT_REGULAR
+        font = f":fontfile='{ff_path(face)}'" if face else ""
         draws.append(
-            f"drawtext=text='{safe}':fontcolor={colour}:fontsize={size}"
+            f"drawtext=text='{safe}'{font}:fontcolor={colour}:fontsize={size}"
             f":x=(w-text_w)/2:y={y}"
             f":alpha='if(lt(t,0.5),t/0.5,if(lt(t,{seconds - 0.6:.2f}),1,"
             f"max(0,({seconds:.2f}-t)/0.6)))'")
@@ -694,15 +860,15 @@ def assemble(acts: list[Act], webm: Path, t_zero: float, wall_end: float) -> Non
     end_secs = END_AUDIO_SECS + 2.2
 
     make_card(title, title_secs, [
-        ("FLEET-HARNESS", 96, "0xf8fafc"),
-        ("Cold-chain dispatch under a trust harness", 42, "0x94a3b8"),
+        ("FLEET-HARNESS", 96, "0xf8fafc", True),
+        ("Cold-chain dispatch under a trust harness", 42, "0x94a3b8", False),
         ("Agents investigate  -  The critic challenges  -  Deterministic policy decides",
-         30, "0x38bdf8"),
+         30, "0x38bdf8", False),
     ])
     make_card(end, end_secs, [
-        ("Agents investigate.", 76, "0xf8fafc"),
-        ("The critic challenges.", 76, "0xf8fafc"),
-        ("Deterministic policy decides.", 76, "0x38bdf8"),
+        ("Agents investigate.", 76, "0xf8fafc", True),
+        ("The critic challenges.", 76, "0xf8fafc", True),
+        ("Deterministic policy decides.", 76, "0x38bdf8", True),
     ])
 
     segments = [title]
@@ -764,11 +930,13 @@ def assemble(acts: list[Act], webm: Path, t_zero: float, wall_end: float) -> Non
 
     # ---- 4. captions -------------------------------------------------------
     cues: list[str] = []
+    timed_cues: list[tuple[float, float, str]] = []
     n = 1
 
     def cue(text: str, start: float, dur: float) -> None:
         nonlocal n
         cues.append(f"{n}\n{srt_time(start)} --> {srt_time(start + dur)}\n{text}\n")
+        timed_cues.append((start, start + dur, text))
         n += 1
 
     for a_i, act in enumerate(acts, start=1):
@@ -781,9 +949,12 @@ def assemble(acts: list[Act], webm: Path, t_zero: float, wall_end: float) -> Non
     srt = BUILD_DIR / "captions.srt"
     srt.write_text("\n".join(cues), encoding="utf-8", newline="\n")
 
-    style = ("FontName=Segoe UI,FontSize=21,PrimaryColour=&H00F1F5F9,"
-             "OutlineColour=&H00030712,BackColour=&HB0030712,BorderStyle=4,"
-             "Outline=0,Shadow=0,MarginV=52,Alignment=2,Bold=1")
+    # Burn an ASS file rather than the SRT. ffmpeg hands libass an SRT with the
+    # default 384x288 script canvas, so a font size meant for 1080p is scaled up
+    # 3.75x and the captions swallow the screen. An ASS header with PlayRes set
+    # to the real frame size makes FontSize mean pixels.
+    stage_fonts()
+    write_ass(BUILD_DIR / "captions.ass", timed_cues)
 
     # libass path handling on Windows is brittle, so run ffmpeg inside build/
     # and reference the subtitle file by bare name.
@@ -794,7 +965,7 @@ def assemble(acts: list[Act], webm: Path, t_zero: float, wall_end: float) -> Non
             [FFMPEG, "-hide_banner", "-loglevel", "error", "-y",
              "-i", body.name, "-i", narration.name,
              "-filter_complex",
-             f"[0:v]subtitles=captions.srt:force_style='{style}'[v]",
+             "[0:v]subtitles=captions.ass:fontsdir=fonts[v]",
              "-map", "[v]", "-map", "1:a",
              "-c:v", "libx264", "-preset", "slow", "-crf", "19",
              "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.1",
@@ -846,6 +1017,7 @@ def main() -> int:
 
         FFMPEG = find_ffmpeg()
         log(f"ffmpeg: {FFMPEG}")
+        resolve_fonts()
 
         synthesise(beats + cards, skip=args.skip_tts)
         TITLE_AUDIO_SECS = cards[0].audio_secs

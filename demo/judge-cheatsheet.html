@@ -1,0 +1,422 @@
+<title>Fleet-Harness Judge Cheatsheet</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#f4f6fa;
+  --surface:#ffffff;
+  --surface-2:#eef1f7;
+  --border:#d7dee9;
+  --text:#101828;
+  --text-dim:#55607a;
+  --accent:#0e9488;
+  --accent-soft:#0e948818;
+  --good:#1f9d64; --good-soft:#1f9d6418;
+  --warn:#b5750a; --warn-soft:#b5750a18;
+  --bad:#c73a4c;  --bad-soft:#c73a4c18;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220;
+    --surface:#121a2c;
+    --surface-2:#182339;
+    --border:#28334f;
+    --text:#e8edf5;
+    --text-dim:#8fa0c2;
+    --accent:#34d9c5;
+    --accent-soft:#34d9c522;
+    --good:#3ecf8e; --good-soft:#3ecf8e22;
+    --warn:#f5b544; --warn-soft:#f5b54422;
+    --bad:#f2596b;  --bad-soft:#f2596b22;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1220;
+  --surface:#121a2c;
+  --surface-2:#182339;
+  --border:#28334f;
+  --text:#e8edf5;
+  --text-dim:#8fa0c2;
+  --accent:#34d9c5;
+  --accent-soft:#34d9c522;
+  --good:#3ecf8e; --good-soft:#3ecf8e22;
+  --warn:#f5b544; --warn-soft:#f5b54422;
+  --bad:#f2596b;  --bad-soft:#f2596b22;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.25);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  line-height:1.5;
+}
+h1,h2,h3{ text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+code, .mono{ font-family:var(--mono); }
+
+.shell{
+  display:grid;
+  grid-template-columns: 240px minmax(0,860px);
+  justify-content:center;
+  gap:40px;
+  padding:32px 24px 96px;
+  max-width:1200px;
+  margin:0 auto;
+}
+@media (max-width: 880px){
+  .shell{ grid-template-columns: 1fr; }
+  .nav{ position:static !important; order:2; }
+}
+
+/* ---- nav ---- */
+.nav{
+  position:sticky; top:24px; align-self:start;
+  display:flex; flex-direction:column; gap:2px;
+  font-size:13px;
+}
+.nav .brand{
+  font-family:var(--mono);
+  font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--text-dim); margin-bottom:10px; padding-left:10px;
+}
+.nav a{
+  color:var(--text-dim); text-decoration:none;
+  padding:7px 10px; border-radius:7px;
+  border-left:2px solid transparent;
+}
+.nav a:hover{ color:var(--text); background:var(--surface-2); }
+.nav a.hot{ color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+
+/* ---- header ---- */
+header.top{
+  padding-bottom:24px; margin-bottom:8px;
+  border-bottom:1px solid var(--border);
+}
+.eyebrow{
+  font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 10px;
+}
+header.top h1{ font-size:30px; margin:0 0 10px; }
+header.top p.lede{ color:var(--text-dim); font-size:15.5px; max-width:62ch; margin:0 0 20px; }
+
+.thesis{
+  background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
+  border-radius:10px; padding:16px 20px; box-shadow:var(--shadow);
+  font-size:17px; font-weight:600; margin:0 0 20px;
+}
+.thesis span{ display:block; color:var(--text-dim); font-weight:500; font-size:12.5px; margin-top:6px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; }
+
+.refusals{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+@media (max-width:640px){ .refusals{ grid-template-columns:1fr; } }
+.refusal{
+  background:var(--surface-2); border:1px solid var(--border); border-radius:9px;
+  padding:12px 14px; font-size:13px;
+}
+.refusal b{ display:block; font-size:13.5px; margin-bottom:4px; }
+.refusal code{ font-size:11.5px; color:var(--accent); }
+
+/* ---- section ---- */
+section{ margin:44px 0; scroll-margin-top:24px; }
+.sec-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:4px; flex-wrap:wrap; }
+.sec-head h2{ font-size:21px; margin:0; }
+.route{ font-family:var(--mono); font-size:12px; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:5px; }
+.sec-sub{ color:var(--text-dim); font-size:14px; margin:6px 0 18px; max-width:66ch; }
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+
+/* widget map table */
+.wmap{ width:100%; border-collapse:collapse; font-size:13.5px; }
+.wmap th{
+  text-align:left; font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-dim); background:var(--surface-2); padding:9px 14px; border-bottom:1px solid var(--border);
+}
+.wmap td{ padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+.wmap tr:last-child td{ border-bottom:none; }
+.wmap td.w{ font-weight:600; width:34%; white-space:normal; }
+.wmap td.w small{ display:block; font-weight:400; color:var(--text-dim); font-family:var(--mono); font-size:11px; margin-top:2px; }
+
+.pill{ display:inline-block; font-family:var(--mono); font-size:10.5px; padding:2px 7px; border-radius:99px; font-weight:600; letter-spacing:.02em; }
+.pill.good{ background:var(--good-soft); color:var(--good); }
+.pill.warn{ background:var(--warn-soft); color:var(--warn); }
+.pill.bad{ background:var(--bad-soft); color:var(--bad); }
+.pill.note{ background:var(--surface-2); color:var(--text-dim); }
+
+/* talk track */
+.track{ display:flex; flex-direction:column; gap:0; }
+.step{
+  display:grid; grid-template-columns:64px 1fr; gap:16px;
+  padding:16px 18px; border-bottom:1px solid var(--border);
+}
+.step:last-child{ border-bottom:none; }
+.step .t{ font-family:var(--mono); font-size:12px; color:var(--accent); font-weight:600; padding-top:1px; }
+.step .say{ font-size:13.5px; color:var(--text-dim); margin-top:5px; }
+.step .say b{ color:var(--text); font-weight:600; }
+.step h3{ font-size:14.5px; margin:0; }
+
+.mini{ font-family:var(--mono); font-size:11px; color:var(--text-dim); background:var(--surface-2); border:1px dashed var(--border); border-radius:8px; padding:10px 14px; margin-top:14px; }
+
+/* qa accordion */
+details{ border-bottom:1px solid var(--border); }
+details:last-child{ border-bottom:none; }
+summary{
+  cursor:pointer; padding:14px 18px; font-weight:600; font-size:14px;
+  list-style:none; display:flex; justify-content:space-between; gap:12px;
+}
+summary::-webkit-details-marker{ display:none; }
+summary::after{ content:"+"; color:var(--accent); font-family:var(--mono); font-weight:700; }
+details[open] summary::after{ content:"–"; }
+details p{ margin:0 18px 16px; color:var(--text-dim); font-size:13.5px; max-width:66ch; }
+
+/* say/dont-say */
+.sd{ display:grid; grid-template-columns:1fr 1fr; }
+@media (max-width:640px){ .sd{ grid-template-columns:1fr; } }
+.sd > div{ padding:14px 16px; font-size:13px; }
+.sd .no{ background:var(--bad-soft); border-right:1px solid var(--border); }
+.sd .yes{ background:var(--good-soft); }
+@media (max-width:640px){ .sd .no{ border-right:none; border-bottom:1px solid var(--border);} }
+.sdrow{ display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border); }
+.sdrow:last-child{ border-bottom:none; }
+@media (max-width:640px){ .sdrow{ grid-template-columns:1fr; } }
+
+footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--border); color:var(--text-dim); font-size:12.5px; font-family:var(--mono); }
+</style>
+
+<div class="shell">
+  <nav class="nav">
+    <div class="brand">Fleet-Harness</div>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#vehicle">Vehicle Explorer</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#runtime">Harness Runtime</a>
+    <a href="#simulation">Simulation Lab</a>
+    <a href="#audit">Audit Logs</a>
+    <a href="#analytics">Analytics</a>
+    <a href="#talktrack" class="hot">3-min Talk Track</a>
+    <a href="#qa">Judge Q&amp;A</a>
+    <a href="#donttsay">Don't say / Do say</a>
+  </nav>
+
+  <main>
+    <header class="top">
+      <p class="eyebrow">Judge-facing cheat sheet · read this, not the 20-min demo script</p>
+      <h1>What's what on the screen</h1>
+      <p class="lede">One page per screen, in plain English — what each widget is actually showing, so you can point and explain instead of reading labels out loud.</p>
+
+      <div class="thesis">
+        “Intelligence is advisory. Deterministic policy is authoritative.”
+        <span>Say this line first. Everything on every screen below is evidence for it.</span>
+      </div>
+
+      <div class="refusals">
+        <div class="refusal"><b>Refuses bad evidence</b>Stale, wrong-source or unrecognized sensor readings get excluded before anyone reasons about them.<br><code>gate.py</code></div>
+        <div class="refusal"><b>Refuses bad reasoning</b>The model's output is checked against the evidence it was given, not trusted at face value.<br><code>critic.py + verifier.py</code></div>
+        <div class="refusal"><b>Refuses the model authority</b>The model writes an opinion. Only the deterministic controller can request an action, and halts need a human.<br><code>controller.py + actions.py</code></div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard">
+      <div class="sec-head"><h2>Dashboard</h2><span class="route">/</span></div>
+      <p class="sec-sub">The one screen judges will look at longest. Everything on it is one real run of <b>TRUCK-042</b>, live — not a mockup.</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">LLM Zero Decision Authority<small>topbar badge</small></td><td>Not a slogan — a literal claim: no code path lets the model call an action. Point at it early, before anyone can ask.</td></tr>
+          <tr><td class="w">Demo Scenes<small>Healthy / Risk Anomaly / Auto-Play</small></td><td>Swaps the truck's telemetry to a canned scenario so you can drive the demo on purpose. Doesn't touch any code.</td></tr>
+          <tr><td class="w">Override <span class="pill bad">red</span></td><td>Manual kill-switch for the demo — forces an immediate stop. Not a harness feature, a presenter convenience.</td></tr>
+          <tr><td class="w">1x / 5x / 10x chips</td><td>Only changes how often the <i>dashboard</i> polls the backend. Say this out loud — it's the one thing people assume affects the system and doesn't.</td></tr>
+          <tr><td class="w">Pending Decisions · Vehicle Monitored · Harness Runs</td><td>Literal counters for this browser session.</td></tr>
+          <tr><td class="w">Harness Trust Score™<small>big % + ring</small></td><td>One executive number blending four sub-scores below it: Freshness, Agent Health, Schema Validity, Verifier Checks. The "if a judge only reads one number" number.</td></tr>
+          <tr><td class="w">"What Could Have Gone Wrong"</td><td>An <b>illustration</b>, not a measurement — say so. Left card = a naive design trusting the model directly; right card = what the harness did instead.</td></tr>
+          <tr><td class="w">5-Layer Decision Pipeline strip</td><td>The architecture diagram, but filled in with this run's actual values: engine, decision state, confidence.</td></tr>
+          <tr><td class="w">Live Failure Injection row</td><td>Same fault buttons as the Simulation Lab, surfaced here for convenience. Every button hits a real backend endpoint.</td></tr>
+          <tr><td class="w">Live Execution panel</td><td>Watch a run happen: Vehicle Agent → Environment Agent → Trust Gate → Risk Assessment → Decision Authority → Action Gateway, each lighting up as it completes.</td></tr>
+          <tr><td class="w">Recent Events feed</td><td>Plain-English log of the same event stream that feeds Audit — "Collected 9 sensor readings," "AI found high risk," etc.</td></tr>
+          <tr><td class="w">Decision Trace Timeline</td><td>The 7 numbered stages of the current run with real timings (fractions of a millisecond) and a one-line purpose for each. Expand the Trust Gate row to see its 4 sub-checks.</td></tr>
+          <tr><td class="w">Evidence Provenance grid</td><td>All 9 sensor readings with source agent, value, a hash, and what was done to normalize it. This is "show your work" for the data, not the model.</td></tr>
+          <tr><td class="w">Controller banner + Approvals queue</td><td>The current decision state (<span class="pill good">AUTO_OPTIMIZE</span> / <span class="pill warn">INSUFFICIENT_DATA</span> / <span class="pill bad">CRITICAL_HALT</span>) and anything waiting on a human right now.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- VEHICLE EXPLORER -->
+    <section id="vehicle">
+      <div class="sec-head"><h2>Vehicle Explorer</h2><span class="route">/vehicle</span></div>
+      <p class="sec-sub">One idea only: <b>raw sensor state</b> and <b>gated evidence</b> are drawn as two separate panels. That gap between them is the Trust Gate's whole job.</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">Four headline stats<small>Trust Gate / Freshness / Confidence / Policy Pack</small></td><td>Per-vehicle summary of the same four things the Dashboard shows globally.</td></tr>
+          <tr><td class="w">Confidence History sparkline</td><td>This vehicle's confidence across its past runs — needs 2+ runs to draw a line.</td></tr>
+          <tr><td class="w">Live Telemetry grid</td><td>Raw numbers, no trust label yet — this is <i>before</i> the gate.</td></tr>
+          <tr><td class="w">Truck Sensors / Route Conditions panels</td><td>The same 9 readings, now split by which agent owns them and marked "up to date" — this is <i>after</i> the gate.</td></tr>
+          <tr><td class="w">AI Risk Assessment panel</td><td>The model's actual written rationale plus the risk factors it flagged — this is an opinion, styled deliberately unlike the decision banner elsewhere.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- PIPELINE -->
+    <section id="pipeline">
+      <div class="sec-head"><h2>Harness Pipeline</h2><span class="route">/pipeline</span></div>
+      <p class="sec-sub">The architecture diagram from Runtime, pinned to one concrete run so the abstract boxes become an actual trail of "what happened."</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">5-Layer strip</td><td>Identical component to the Dashboard's — same run, same numbers.</td></tr>
+          <tr><td class="w">"What happened" stepper<small>Sensors → Data Check → AI Review → Decision → Next Step</small></td><td>The whole run translated into five plain-English words. This is the sentence you say if someone asks "so what actually happened."</td></tr>
+          <tr><td class="w">Architecture Layers list<small>Intelligence / Evidence / Policy / Decision / Authority</small></td><td>The five <i>concepts</i>, not the modules — this is the abstraction the Runtime page's 8 tiles implement.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- RUNTIME -->
+    <section id="runtime">
+      <div class="sec-head"><h2>Harness Runtime</h2><span class="route">/runtime</span></div>
+      <p class="sec-sub">The engineering-depth page. If a judge asks "how is this actually built," come here.</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">8 component tiles<small>Supervisor, State Manager, Scheduler, Retry Engine, Policy Engine, Execution Trace, Memory, Audit</small></td><td>Each tile is one real backend module, not a diagram box invented for the slide.</td></tr>
+          <tr><td class="w">Supervisor Console</td><td>A literal terminal-style log of what the Supervisor did this run — launch, collect, decide.</td></tr>
+          <tr><td class="w">Policy Engine card</td><td>Which domain pack is active (<code>cold_chain</code> vs <code>tyre_safety</code>) and a live switcher. Switching it changes what counts as a required signal, without touching the gate, verifier, or controller code.</td></tr>
+          <tr><td class="w">Confidence Computation</td><td>The exact arithmetic, filled in with real numbers: <code>(9 trusted − 2 contradiction) ÷ 9 expected = 78%</code>.</td></tr>
+          <tr><td class="w">Composite Trust Score</td><td>Five factors multiplied together (evidence quality × verifier × gate cleanliness × policy compliance × historical reliability) — none of the five is something the model reported about itself.</td></tr>
+          <tr><td class="w">Signal Trend</td><td>One signal's history for this vehicle, selector-driven.</td></tr>
+          <tr><td class="w">World State</td><td>Raw ground truth, <b>before</b> the gate — the counterpart to Vehicle Explorer's gated view, useful for "show me the gate actually excluding something."</td></tr>
+          <tr><td class="w">Isolation Proof<small>"Try: Vehicle → Environment API"</small></td><td>A live button that makes the Vehicle Agent genuinely attempt to call the Environment Agent's tool — and get denied on screen, in real time.</td></tr>
+          <tr><td class="w">Decision Certificate</td><td>Six checkboxes for the current run's decision — each one a real field on the stored record, not a designed checklist.</td></tr>
+          <tr><td class="w">Incident Memory</td><td>Past <span class="pill bad">CRITICAL_HALT</span>s only, and how each was resolved. Empty until something has actually halted.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- SIMULATION -->
+    <section id="simulation">
+      <div class="sec-head"><h2>Simulation Lab</h2><span class="route">/simulation</span></div>
+      <p class="sec-sub">Where you break things on purpose. Every button here hits a real backend endpoint — nothing is faked for the demo.</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">Run a Check<small>Normal / risky / reset</small></td><td>Sets the world state, then triggers a run against it.</td></tr>
+          <tr><td class="w">"Break Something on Purpose"<small>6 fault buttons</small></td><td>Disconnect a sensor agent, corrupt the model's output, backdate a reading, simulate a network blip, force sensor drift, or trip the circuit breaker — each is a named failure mode the harness is built to survive.</td></tr>
+          <tr><td class="w">System Indicators</td><td>Live health chips per subsystem — this is what makes "graceful degradation" visible instead of asserted.</td></tr>
+          <tr><td class="w">Security Check</td><td>The red-team probe: inspects the live agent object for action-shaped attributes and checks whether it can even reach the action gateway. It fails by <i>absence</i>, not by a permission check.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- AUDIT -->
+    <section id="audit">
+      <div class="sec-head"><h2>Audit Logs</h2><span class="route">/audit</span></div>
+      <p class="sec-sub">The append-only trail. Useful for "could someone review this after the fact without having been in the room."</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">Event-type filter chips</td><td>12 fixed event types — the entire vocabulary the system can ever log, not a free-text log.</td></tr>
+          <tr><td class="w">Audit Trail list</td><td>Every event, newest first, in plain English with a timestamp.</td></tr>
+          <tr><td class="w">Decision Details panel</td><td>Click any record with a run id and it reconstructs that decision <i>from storage</i> — same stepper, same rationale, as it was at the time.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="analytics">
+      <div class="sec-head"><h2>Analytics</h2><span class="route">/analytics</span></div>
+      <p class="sec-sub">The fleet-manager view. One chart is load-bearing; the rest are context.</p>
+      <div class="card">
+        <table class="wmap">
+          <tr><th>Widget</th><th>What it actually is</th></tr>
+          <tr><td class="w">4 stat cards</td><td>Total runs, critic rejections, contradictions flagged, security checks passed — session totals.</td></tr>
+          <tr><td class="w">Decision Funnel <span class="pill note">the important one</span></td><td>Runs → evidence complete → risk assessed → verifier passed → automation continued. <b>Every drop between stages is a refusal to proceed</b>, not a failure of the chart.</td></tr>
+          <tr><td class="w">Confidence Over Time</td><td>Sparkline across all runs this session.</td></tr>
+          <tr><td class="w">Decision Distribution</td><td>Count of Auto-Optimize vs Insufficient Data vs Critical Halt outcomes.</td></tr>
+          <tr><td class="w">System Health donuts</td><td>Avg. confidence, % healthy decisions, critic validity, security integrity.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- TALK TRACK -->
+    <section id="talktrack">
+      <div class="sec-head"><h2>The 3-minute talk track</h2></div>
+      <p class="sec-sub">If judges give you three minutes and one browser tab, run exactly this. It hits all three refusals with one demonstration each.</p>
+      <div class="card track">
+        <div class="step">
+          <div class="t">0:00</div>
+          <div><h3>Open on the Dashboard, don't touch anything yet</h3><div class="say">Say: <b>"This is not an AI agent — it's a trust harness."</b> Point at the <b>LLM Zero Decision Authority</b> badge. Add, proactively: <b>"the reasoner is a deterministic mock right now, no API key — every guarantee you'll see is enforced by the harness, not the model."</b></div></div>
+        </div>
+        <div class="step">
+          <div class="t">0:30</div>
+          <div><h3>Click <b>Healthy</b> scene → <b>Run check</b></h3><div class="say">Let the Live Execution panel animate through all six stages without talking over it. Land on <b>AUTO_OPTIMIZE, 100%, single-digit milliseconds.</b> Say: <b>"nine sensor readings, all trusted, no contradiction — automation continues."</b></div></div>
+        </div>
+        <div class="step">
+          <div class="t">1:15</div>
+          <div><h3>Click <b>Risk Anomaly</b> scene → <b>Run check</b></h3><div class="say">Set it up first: <b>"cooling reports ON while cargo is 11.5°C — those two facts can't both be true."</b> Then narrate in order: correlation catches it <i>before</i> the model reasons → the model reasons anyway and calls it HIGH risk → the verifier checks that against the evidence → confidence falls <b>100%→78%</b> → the Controller reaches <b><span class="pill bad">CRITICAL_HALT</span></b>. Land the line: <b>"notice what didn't happen — the model didn't decide, it produced an opinion."</b></div></div>
+        </div>
+        <div class="step">
+          <div class="t">2:15</div>
+          <div><h3>Point at the pending action card → Approve</h3><div class="say">Say: <b>"halting is human-tier — it doesn't execute, it waits for a person."</b> Click Approve, point at the three timestamped rows (requested / approved / executed).</div></div>
+        </div>
+        <div class="step">
+          <div class="t">2:45</div>
+          <div><h3>Close</h3><div class="say">Say slowly, one beat between each: <b>"Agents investigate. The Critic challenges. Deterministic policy decides."</b> Stop talking.</div></div>
+        </div>
+      </div>
+      <div class="mini">Got 60 seconds instead? Cut to just steps 2 and 3 — the healthy run and the halt. That alone proves both refusals that matter most.</div>
+    </section>
+
+    <!-- QA -->
+    <section id="qa">
+      <div class="sec-head"><h2>Questions judges actually ask</h2></div>
+      <div class="card">
+        <details open>
+          <summary>The reasoner is mocked — does any of this hold with a real model?</summary>
+          <p>Yes — every guarantee is enforced on the harness side, not the model side: strict schema validation, the verifier's checks, the gate, the controller's fixed rule order. Point at <code>backend/.env</code>'s <code>OPENROUTER_API_KEY</code> — same script, real model, identical refusals.</p>
+        </details>
+        <details>
+          <summary>What if the model is just right, and the harness blocks a good action?</summary>
+          <p>That's the intended trade — it's asymmetric on purpose. Worst case here is a human looks at a screen. Worst case for "let the model act directly" is spoiled cargo.</p>
+        </details>
+        <details>
+          <summary>Why doesn't the model just report its own confidence?</summary>
+          <p>Because a self-reported number isn't an observation of anything. The schema literally forbids a <code>confidence</code> field — it's computed from what the harness can independently verify.</p>
+        </details>
+        <details>
+          <summary>How is "the agent can't act" actually enforced?</summary>
+          <p>By absence, not permission. The agent code has no import of the actions module at all — there's no reference to call, so a misconfigured permission check isn't even the failure mode being tested for.</p>
+        </details>
+        <details>
+          <summary>What does "execute" actually do?</summary>
+          <p>Creates an immutable escalation record. Nothing touches a real fleet system — that's flagged in code as a future integration point, deliberately out of scope for what's being proven today.</p>
+        </details>
+        <details>
+          <summary>Two policy packs isn't really "domain-independent," is it?</summary>
+          <p>Fair, and the claim is narrower than that: the gate, correlation engine, verifier and controller contain zero cold-chain-specific logic. Swapping the pack changes required signals and the risk logic without touching any of those four files.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- DONT SAY -->
+    <section id="donttsay">
+      <div class="sec-head"><h2>Don't say / Do say</h2></div>
+      <p class="sec-sub">Corrections a technical judge will catch instantly if you phrase it wrong.</p>
+      <div class="card">
+        <div class="sdrow"><div class="no">"The AI decides when to halt."</div><div class="yes">The AI produces a risk assessment. The Controller decides.</div></div>
+        <div class="sdrow"><div class="no">"Confidence drops to zero when an agent dies."</div><div class="yes">It drops to the share of expected evidence that survived — 56% with one agent down, not 0%.</div></div>
+        <div class="sdrow"><div class="no">"The halt means 100% confidence something's wrong."</div><div class="yes">The halt run reads 78% — a contradiction lowers confidence, it doesn't raise it.</div></div>
+        <div class="sdrow"><div class="no">"The system executes a cooling override."</div><div class="yes">It creates an escalation record, after a human approves.</div></div>
+        <div class="sdrow"><div class="no">"$85,000 of cargo was saved."</div><div class="yes">That figure is the counterfactual card's illustration, not a measurement.</div></div>
+      </div>
+    </section>
+
+    <footer>fleet · demo/judge-cheatsheet.html · companion to master_demo.md &amp; presenter_notes.md</footer>
+  </main>
+</div>

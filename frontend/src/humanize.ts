@@ -7,7 +7,7 @@
 // plain sentence a non-technical person would understand; the raw form stays
 // available in "technical" view for anyone who wants the underlying detail.
 
-import type { AuditRecord, ControllerState } from "./types";
+import type { AuditRecord, ControllerState, RiskMatrix } from "./types";
 
 export const SIGNAL_LABELS: Record<string, string> = {
   cargo_temperature: "Cargo Temperature",
@@ -102,6 +102,20 @@ const RISK_FACTOR_LABELS: Record<string, string> = {
 
 export function riskFactorLabel(code: string): string {
   return RISK_FACTOR_LABELS[code] ?? prettify(code);
+}
+
+const RISK_LEVEL_BASE: Record<string, number> = { LOW: 15, MEDIUM: 50, HIGH: 85 };
+
+/** A single 0-100 risk number for display, derived from the same RiskMatrix
+ * fields the rest of the app already reads — not a value the LLM sets
+ * itself (risk_level is schema-validated; the score is just a legible
+ * rendering of it plus how many factors/contradictions back it up). */
+export function riskScore(rm: RiskMatrix | null | undefined, criticRejected: boolean): number {
+  if (!rm) return criticRejected ? 70 : 0;
+  const base = RISK_LEVEL_BASE[rm.risk_level] ?? 50;
+  const factorBump = Math.min(10, rm.risk_factors.length * 3);
+  const contradictionBump = rm.contradiction_detected ? 5 : 0;
+  return Math.min(100, base + factorBump + contradictionBump);
 }
 
 const ACTION_TYPE_LABELS: Record<string, string> = {

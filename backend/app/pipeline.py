@@ -132,6 +132,8 @@ class Harness:
                 circuit_breaker_open=run_state.circuit_breaker_open,
                 decision_chain=run_state.trace,
                 retries=run_state.retries,
+                feedback_loop_triggered=run_state.feedback_loop_triggered,
+                feedback_loop_reason=run_state.feedback_loop_reason,
             ),
             escalation_id=escalation_id,
         )

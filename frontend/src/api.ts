@@ -6,6 +6,7 @@ import type {
   IncidentRecord,
   PolicyPackInfo,
   ProbeResult,
+  ShipmentInput,
   VehicleTrend,
   WorldState,
 } from "./types";
@@ -40,6 +41,8 @@ export const api = {
   vehicleTrend: (vehicleId: string, signal: string, limit = 8) =>
     req<VehicleTrend>(`/vehicles/${vehicleId}/trend?signal=${signal}&limit=${limit}`),
   transientError: () => req("/simulate/transient-error", { method: "POST" }),
+  verifierFeedback: () => req("/simulate/verifier-feedback", { method: "POST" }),
+  exhaustRetries: () => req("/simulate/exhaust-retries", { method: "POST" }),
   incidents: (vehicleId?: string, limit = 20) =>
     req<IncidentRecord[]>(`/incidents?limit=${limit}${vehicleId ? `&vehicle_id=${vehicleId}` : ""}`),
   eventTypes: () => req<string[]>("/events/types"),
@@ -54,6 +57,8 @@ export const api = {
 
   scenario: (name: string) =>
     req("/simulate/scenario", { method: "POST", body: JSON.stringify({ name }) }),
+  shipment: (body: ShipmentInput) =>
+    req("/simulate/shipment", { method: "POST", body: JSON.stringify(body) }),
   killAgent: (agent: "agent_a" | "agent_b", disabled: boolean) =>
     req("/simulate/kill-agent", {
       method: "POST",
@@ -72,6 +77,8 @@ export const api = {
   emergencyOverride: () => req("/simulate/emergency-override", { method: "POST" }),
   sensorDrift: (temp = 14.5) => req(`/simulate/sensor-drift?cargo_temp=${temp}`, { method: "POST" }),
   tripCircuitBreaker: () => req("/simulate/circuit-breaker", { method: "POST" }),
+  action: (id: string) =>
+    req<{ action: ActionRequest; events: unknown[] }>(`/actions/${id}`),
   approve: (id: string, approver: string) =>
     req<ActionRequest>(`/actions/${id}/approve`, {
       method: "POST",

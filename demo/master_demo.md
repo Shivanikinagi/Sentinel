@@ -554,14 +554,51 @@ Recorded pass: **20 min 46 s**, 16 chapters, 155 narration lines, 43 stills, 0 r
 
 ---
 
+## The 3-minute cut — already built
+
+The short version is not an edit of this recording; it is **generated the same
+way, from its own script**, so it is narrated, captioned and re-runnable rather
+than trimmed by hand:
+
+```bash
+python create_demo.py          # -> demo/ColdChain-Harness-Demo.mp4
+```
+
+| | |
+|---|---|
+| **Output** | `demo/ColdChain-Harness-Demo.mp4` — 1920×1080, H.264 + AAC |
+| **Length** | ~3¼ minutes, title card + 3 acts + end card |
+| **Narration** | Synthesised offline with Windows SAPI, no API key, no network |
+| **Captions** | Burned in, generated from the same beat table as the audio |
+| **Log** | `demo/video_pipeline.log` |
+
+Three acts, chosen so each carries one of the three refusals:
+
+| Act | Beats | Shows | Refusal |
+|---|---|---|---|
+| **1 — A normal shipment** | 7 | Isolated agents → Trust Gate's four sub-stages → risk assessment → `AUTO_OPTIMIZE` at 100 % | evidence |
+| **2 — Contradictory evidence** | 11 | Cooling ON at 11.5 °C → correlation catches it pre-LLM → critic finds it → verifier checks it → confidence 100 → 78 % → `CRITICAL_HALT` | reasoning |
+| **3 — Authority** | 6 | Human-tier approval, escalation record, then two live isolation probes — agent → tool denied, and 8/8 agent → action paths blocked | authority |
+
+The pipeline is four stages: synthesise the narration and **measure each clip**,
+start the real servers, drive the real UI with Playwright while recording, then
+assemble with ffmpeg — cards, cross-fades, narration mixed onto the timeline,
+captions burned in. Narration length is what paces the capture, so there is no
+dead air to strip afterwards. Flags: `--skip-capture` (re-assemble only),
+`--skip-tts`, `--no-servers`, `--headed`, `--keep-build`, `--dry-run`.
+
+---
+
 ## Editing this into shorter cuts
 
-The chapter boundaries are the edit points. Every chapter opens on a title card
-and ends on a settled screen, so cuts are clean.
+If you would rather cut *this* recording than run the short pipeline: the chapter
+boundaries are the edit points. Every chapter opens on a title card and ends on a
+settled screen, so cuts are clean.
 
 **3-minute hackathon cut** — Ch 1 (first 3 beats) → Ch 4 (healthy run + result) →
 Ch 8 (contradiction → halt) → Ch 9 (approve) → Ch 16 (last 3 lines).
-The three-refusals story with one demonstration each.
+The three-refusals story with one demonstration each — the same shape the
+generated 3-minute video takes.
 
 **5-minute technical cut** — add Ch 12 (isolation probe) and Ch 11's pack switch.
 
@@ -620,3 +657,6 @@ The demo overlay — chapter chip, caption bar, spotlight ring — is injected b
 | `demo/captions.srt` | Captions timed to the recorded run |
 | `demo/create_master_demo.py` | The automation that produces all of the above |
 | `demo/automation.log` | Timestamped log of the recorded run |
+| `create_demo.py` | The 3-minute video pipeline (narrate → serve → capture → assemble) |
+| `demo/ColdChain-Harness-Demo.mp4` | The finished 3-minute video |
+| `demo/video_pipeline.log` | Timestamped log of the video build |

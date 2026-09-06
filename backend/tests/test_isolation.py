@@ -68,9 +68,11 @@ def test_vehicle_observer_cannot_reach_environment_scope() -> None:
 
 
 def test_critic_input_is_only_evidence() -> None:
-    # assess() takes the evidence list and a corrupt flag — no world, no tools.
+    # assess() takes the evidence list, a corrupt flag, and (for the Verifier
+    # feedback loop) a plain corrective string — still no world, no tools, no
+    # action authority.
     params = list(inspect.signature(critic.Critic.assess).parameters)
-    assert params == ["self", "evidence", "corrupt"]
+    assert params == ["self", "evidence", "corrupt", "feedback"]
 
 
 def test_unauthorized_action_probe_reports_blocked() -> None:

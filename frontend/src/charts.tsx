@@ -52,9 +52,10 @@ export function Sparkline({
 }
 
 export function BarMini({
-  items,
+  items, formatValue,
 }: {
   items: { label: string; value: number; color?: string }[];
+  formatValue?: (v: number) => string;
 }) {
   const max = Math.max(...items.map((i) => i.value), 1e-9);
   return (
@@ -68,9 +69,49 @@ export function BarMini({
               style={{ width: `${(it.value / max) * 100}%`, background: it.color ?? "var(--accent)" }}
             />
           </div>
-          <span className="barmini-value">{it.value}</span>
+          <span className="barmini-value">{formatValue ? formatValue(it.value) : it.value}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+export function PieMini({
+  items, size = 120, stroke = 22,
+}: {
+  items: { label: string; value: number; color: string }[]; size?: number; stroke?: number;
+}) {
+  const total = items.reduce((s, i) => s + i.value, 0) || 1;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <div className="pie-mini">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--panel-3)" strokeWidth={stroke} />
+        {items.filter((it) => it.value > 0).map((it) => {
+          const pct = it.value / total;
+          const dash = c * pct;
+          const el = (
+            <circle
+              key={it.label} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={it.color} strokeWidth={stroke}
+              strokeDasharray={`${dash} ${c - dash}`} strokeDashoffset={-offset}
+              transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            />
+          );
+          offset += dash;
+          return el;
+        })}
+      </svg>
+      <div className="pie-mini-legend">
+        {items.map((it) => (
+          <div className="pie-mini-legend-row" key={it.label}>
+            <span className="pie-mini-dot" style={{ background: it.color }} />
+            <span className="pie-mini-label">{it.label}</span>
+            <span className="pie-mini-value">{Math.round((it.value / total) * 100)}%</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

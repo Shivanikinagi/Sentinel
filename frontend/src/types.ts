@@ -62,6 +62,8 @@ export interface DecisionTrace {
   circuit_breaker_open?: boolean;
   decision_chain?: DecisionStep[];
   retries?: DecisionStep[];
+  feedback_loop_triggered?: boolean;
+  feedback_loop_reason?: string | null;
 }
 
 export interface SignalConfidence {
@@ -202,4 +204,17 @@ export interface ProbeResult {
   blocked: boolean;
   conclusion: string;
   attempts: ProbeAttempt[];
+}
+
+export interface ShipmentInput {
+  vehicle_id?: string;
+  cargo_temperature?: number;
+  ambient_temperature?: number;
+  cooling_status?: boolean;
+  policy_pack?: string;
+  dwell_minutes?: number;
+  agent_a_disabled?: boolean;
+  agent_b_disabled?: boolean;
+  corrupt_critic?: boolean;
+  stale_signal?: string | null;
 }

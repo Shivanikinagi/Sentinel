@@ -11,6 +11,7 @@ const NAV = [
   { to: "/runtime", label: "Harness Runtime", icon: ZapIcon },
   { to: "/vehicle", label: "Vehicle Explorer", icon: SearchCarIcon },
   { to: "/pipeline", label: "Harness Pipeline", icon: ActivityIcon },
+  { to: "/isolation", label: "Isolation Proof", icon: ShieldIcon },
   { to: "/simulation", label: "Simulation Lab", icon: FlaskIcon },
   { to: "/audit", label: "Audit Logs", icon: ClipboardIcon },
   { to: "/analytics", label: "Analytics", icon: BarChartIcon },

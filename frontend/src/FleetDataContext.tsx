@@ -3,10 +3,8 @@ import {
 } from "react";
 import { api } from "./api";
 import type {
-  ActionRequest, AuditRecord, ControllerDecision, ProbeResult, WorldState,
+  ActionRequest, AuditRecord, ControllerDecision, ProbeResult, ShipmentInput, WorldState,
 } from "./types";
-
-const VIEW_KEY = "fleet-harness-view-mode";
 
 interface FleetData {
   decision: ControllerDecision | null;
@@ -24,8 +22,8 @@ interface FleetData {
   autoPlayActive: boolean;
   setTimeLapseSpeed: (speed: number) => void;
   startAutoPlay: () => void;
-  setMode: (tech: boolean) => void;
   runNow: () => void;
+  evaluateShipment: (input: ShipmentInput) => void;
   approve: (id: string) => void;
   reject: (id: string) => void;
   runProbe: () => void;
@@ -37,6 +35,8 @@ interface FleetData {
   sensorDrift: (temp?: number) => void;
   tripCircuitBreaker: () => void;
   triggerTransientError: () => void;
+  triggerVerifierFeedback: () => void;
+  triggerExhaustRetries: () => void;
   reset: () => void;
 }
 
@@ -58,14 +58,8 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
   const [timeLapseSpeed, setTimeLapseSpeed] = useState(1);
   const [autoPlayActive, setAutoPlayActive] = useState(false);
 
-  const [technical, setTechnical] = useState<boolean>(() => {
-    try { return localStorage.getItem(VIEW_KEY) === "technical"; } catch { return false; }
-  });
-
-  const setMode = (tech: boolean) => {
-    setTechnical(tech);
-    try { localStorage.setItem(VIEW_KEY, tech ? "technical" : "simple"); } catch { /* ignore */ }
-  };
+  // Simple mode only — the Simple/Technical toggle was removed from the UI.
+  const technical = false;
 
   const flash = (m: string) => {
     setToast(m);
@@ -95,20 +89,25 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
   }, [refresh, timeLapseSpeed]);
 
   // A totally empty dashboard (all zeros, "no data yet" everywhere) reads as
-  // broken, not idle. Seed two healthy runs on first load if the backend has
-  // no history yet, so metrics/trend/analytics have something real to show.
+  // broken, not idle. Seed two healthy runs whenever the backend has no
+  // history yet — on first load, AND after an explicit Reset (see `reset`
+  // below) — so Analytics' trend charts never render empty mid-demo.
+  const seedIfEmpty = useCallback(async () => {
+    try {
+      const existing = await api.recentDecisions(1);
+      if (existing.length === 0) {
+        await api.run();
+        await api.run();
+      }
+    } catch {
+      /* backend not up yet — the regular poll will catch it later */
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const existing = await api.recentDecisions(1);
-        if (!cancelled && existing.length === 0) {
-          await api.run();
-          await api.run();
-        }
-      } catch {
-        /* backend not up yet — the regular poll will catch it later */
-      }
+      await seedIfEmpty();
       if (!cancelled) refresh();
     })();
     return () => { cancelled = true; };
@@ -165,8 +164,14 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
   const value: FleetData = {
     decision, history, world, actions, audit, backend, probe, toast, busy, technical,
     survivedFailuresCount, timeLapseSpeed, autoPlayActive, setTimeLapseSpeed, startAutoPlay,
-    setMode,
     runNow: () => guard(async () => setDecision(await api.run()), "Harness Check Complete"),
+    evaluateShipment: (input) => guard(
+      async () => {
+        await api.shipment(input);
+        setDecision(await api.run());
+      },
+      "Shipment Evaluated"
+    ),
     approve: (id) => guard(() => api.approve(id, "ops@fleet"), "Approved & Carried Out"),
     reject: (id) => {
       const reason = prompt("Why are you rejecting this?") ?? "rejected by operator";
@@ -189,7 +194,9 @@ export function FleetDataProvider({ children }: { children: ReactNode }) {
     sensorDrift: (temp = 14.5) => guard(() => api.sensorDrift(temp), `Sensor Drift: Temp set to ${temp}°C`, true),
     tripCircuitBreaker: () => guard(() => api.tripCircuitBreaker(), "⚡ LLM Circuit Breaker Tripped to OPEN", true),
     triggerTransientError: () => guard(() => api.transientError(), "↻ Risk Assessment Engine will fail once, then retry", true),
-    reset: () => guard(() => api.reset(), "Harness State Reset"),
+    triggerVerifierFeedback: () => guard(() => api.verifierFeedback(), "↺ Verifier will reject once, feeding back for reassessment", true),
+    triggerExhaustRetries: () => guard(() => api.exhaustRetries(), "⏱ Retries will exhaust — harness will fail safely, no action", true),
+    reset: () => guard(async () => { await api.reset(); await seedIfEmpty(); }, "Harness State Reset"),
   };
 
   return (

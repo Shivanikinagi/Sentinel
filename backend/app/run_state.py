@@ -64,6 +64,8 @@ class RunState:
     verifier_result: VerifierResult | None = None
     circuit_breaker_open: bool = False
     retries: list[DecisionStep] = field(default_factory=list)
+    feedback_loop_triggered: bool = False
+    feedback_loop_reason: str | None = None
 
     # -- Decision layer ----------------------------------------------------------
     confidence: float = 0.0

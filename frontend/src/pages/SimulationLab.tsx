@@ -1,5 +1,6 @@
 import { useFleet } from "../FleetDataContext";
 import { ControllerBanner, SecurityProbe } from "../components";
+import { FailureFlowDiagram } from "../components/FailureFlowDiagram";
 import { PlayIcon, RefreshIcon, ZapIcon } from "../icons";
 
 export default function SimulationLab() {
@@ -61,6 +62,8 @@ export default function SimulationLab() {
       </div>
 
       <ControllerBanner d={decision} technical={technical} />
+
+      <FailureFlowDiagram />
 
       <div className="dash-grid">
         <div className="panel">

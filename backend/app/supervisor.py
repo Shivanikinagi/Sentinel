@@ -243,22 +243,73 @@ class Supervisor:
     # -- Stage 5: Verifier ---------------------------------------------------------
     def _verify(self, run_state: RunState) -> None:
         t0 = time.perf_counter()
-        if not run_state.critic_rejected and run_state.risk_matrix is not None:
+        # Captured up front: whether the Critic even produced a matrix to
+        # check. A pre-existing rejection (schema/backend failure in
+        # _assess) already carries its own real reason — verifying nothing
+        # must never overwrite it with the generic placeholder below.
+        had_matrix = not run_state.critic_rejected and run_state.risk_matrix is not None
+        if had_matrix:
             result = self._verifier.verify(run_state.risk_matrix, run_state.trusted_evidence)
-            if not result.valid:
-                run_state.critic_rejected = True
-                run_state.critic_rejection_reason = f"verifier_check_failed: {result.reason}"
         else:
             result = VerifierResult(
                 valid=False, reason="Critic output was rejected prior to verification",
                 checks_failed=["pre_verification_critic_rejection"],
             )
         dur = (time.perf_counter() - t0) * 1000
-        run_state.verifier_result = result
         run_state.record_step(DecisionStep(
             step_name="verifier_subsystem", status="OK" if result.valid else "FAILED",
             detail=result.reason or "Verification evaluated", duration_ms=round(dur, 2),
         ))
+
+        # Feedback loop: a semantically invalid but well-formed matrix (a
+        # grounding or self-consistency failure) isn't a transient error the
+        # RetryEngine can fix — it's the Verifier disagreeing with the Risk
+        # Assessment Engine's reasoning. Its rejection reason is fed back for
+        # ONE bounded reassessment before falling back to rejection; this is
+        # the one place two independent roles negotiate instead of one simply
+        # grading the other's single shot.
+        if had_matrix and not result.valid:
+            result = self._feedback_loop(run_state, result)
+
+        run_state.verifier_result = result
+        if had_matrix and not result.valid:
+            run_state.critic_rejected = True
+            run_state.critic_rejection_reason = f"verifier_check_failed: {result.reason}"
+
+    def _feedback_loop(self, run_state: RunState, result: VerifierResult) -> VerifierResult:
+        run_state.feedback_loop_triggered = True
+        run_state.feedback_loop_reason = result.reason
+
+        t0 = time.perf_counter()
+        revised = self._critic.assess(run_state.trusted_evidence, feedback=result.reason)
+        dur = (time.perf_counter() - t0) * 1000
+        run_state.record_step(DecisionStep(
+            step_name="risk_assessment_engine_revised",
+            status="FAILED" if revised.rejected else "OK",
+            detail=f"Reassessed after Verifier feedback ({result.reason})",
+            duration_ms=round(dur, 2),
+        ))
+        self._events.publish(AuditEvent.VERIFIER_FEEDBACK_SENT, run_state.run_id, {
+            "reason": result.reason,
+        })
+
+        if revised.rejected:
+            return VerifierResult(
+                valid=False,
+                reason=f"Revised assessment also rejected: {revised.rejection_reason}",
+                checks_failed=["feedback_loop_revision_rejected"],
+            )
+
+        run_state.risk_matrix = revised.matrix
+        t1 = time.perf_counter()
+        recheck = self._verifier.verify(revised.matrix, run_state.trusted_evidence)
+        dur1 = (time.perf_counter() - t1) * 1000
+        run_state.record_step(DecisionStep(
+            step_name="verifier_subsystem_recheck",
+            status="OK" if recheck.valid else "FAILED",
+            detail=recheck.reason or "Re-verification evaluated", duration_ms=round(dur1, 2),
+        ))
+        return recheck
 
     # -- Stage 6: Deterministic Controller -----------------------------------------
     def _decide(self, run_state: RunState, policy_pack: PolicyPack) -> None:

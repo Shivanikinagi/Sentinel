@@ -98,7 +98,7 @@ export function LiveExecutionPanel({
     <div className="mc-panel">
       <div className="mc-panel-head">
         <div className="mc-live-badge"><span className="mc-live-dot" />LIVE EXECUTION</div>
-        <button className="mc-run-btn" disabled={busy} onClick={onRun}>{busy ? "Running…" : "Run check"}</button>
+        <button className="mc-run-btn" disabled={busy} onClick={onRun}>{busy ? "Running…" : "Run Evaluation"}</button>
       </div>
 
       <div className="mc-flow">
@@ -124,8 +124,8 @@ export function LiveExecutionPanel({
           </>
         ) : (
           <span className="mc-controller-scenario">
-            Ready to evaluate a fleet decision. Run a Healthy or Risk scenario to see the harness
-            supervise agents, validate evidence, assess risk, and decide whether automation is safe.
+            Ready to evaluate a shipment. Submit one above to see the harness supervise agents,
+            validate evidence, assess risk, and decide whether automation is safe.
           </span>
         )}
       </div>

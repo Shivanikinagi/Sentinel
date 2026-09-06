@@ -24,3 +24,4 @@ Thumbs.db
 
 # Demo recordings (large binaries; regenerate with demo/create_demo.py)
 demo/video/
+demo/build/

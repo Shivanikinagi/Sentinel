@@ -83,3 +83,50 @@ def reset() -> None:
     global _STATE
     _STATE = WorldState()
     apply_scenario("healthy")
+
+
+def apply_custom(
+    *,
+    vehicle_id: str | None = None,
+    cargo_temperature: float | None = None,
+    ambient_temperature: float | None = None,
+    cooling_status: bool | None = None,
+    dwell_minutes: float | None = None,
+    agent_a_disabled: bool = False,
+    agent_b_disabled: bool = False,
+    corrupt_critic: bool = False,
+    stale_signal: str | None = None,
+) -> None:
+    """Operator-submitted shipment telemetry (Live Scenario Runner).
+
+    Same category of operation as `apply_scenario` / the `/simulate/*` demo
+    switches above: it only mutates the raw truth the agents observe next
+    run. Unspecified fields fall back to the healthy baseline so every
+    submission starts from a clean, repeatable world state; the fault
+    switches are set explicitly (not merged) so a previous submission's
+    fault never leaks into the next one.
+    """
+    with _STATE._lock:
+        healthy = SCENARIOS["healthy"]
+        for k, v in healthy["vehicle"].items():
+            setattr(_STATE.vehicle, k, v)
+        for k, v in healthy["environment"].items():
+            setattr(_STATE.environment, k, v)
+
+        if vehicle_id:
+            _STATE.vehicle.vehicle_id = vehicle_id
+        if cargo_temperature is not None:
+            _STATE.vehicle.cargo_temperature = cargo_temperature
+        if cooling_status is not None:
+            _STATE.vehicle.cooling_status = 1.0 if cooling_status else 0.0
+        if ambient_temperature is not None:
+            _STATE.environment.ambient_temperature = ambient_temperature
+        if dwell_minutes is not None:
+            _STATE.environment.dwell_minutes = dwell_minutes
+
+        _STATE.agent_a_disabled = agent_a_disabled
+        _STATE.agent_b_disabled = agent_b_disabled
+        if corrupt_critic:
+            _STATE.corrupt_critic = True
+        _STATE.force_stale_signal = stale_signal
+        _STATE.scenario = "custom"

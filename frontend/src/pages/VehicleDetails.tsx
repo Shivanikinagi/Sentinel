@@ -1,8 +1,13 @@
 import { useFleet } from "../FleetDataContext";
 import { CriticPanel, EvidencePanel, StatCard } from "../components";
 import { Sparkline } from "../charts";
-import { STATE_META, relativeTime, signalLabel } from "../humanize";
+import { STATE_META, SOURCE_META, relativeTime, signalLabel } from "../humanize";
 import { TruckIcon } from "../icons";
+
+function formatLatency(seconds: number): string {
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  return `${Math.round(seconds / 60)}m`;
+}
 
 export default function VehicleDetails() {
   const { decision, history, world, technical } = useFleet();
@@ -15,10 +20,16 @@ export default function VehicleDetails() {
 
   const trustedCount = decision ? decision.trace.evidence_snapshot.length - decision.trace.excluded_evidence_ids.length : 0;
   const totalSignals = decision?.trace.evidence_snapshot.length ?? 0;
+  const rejectedCount = totalSignals - trustedCount;
   const freshnessPct = totalSignals ? Math.round((trustedCount / totalSignals) * 100) : 0;
   const gateStatus = decision ? (decision.trace.excluded_evidence_ids.length ? "warn" : "good") : undefined;
 
   const confidenceSeries = [...history].reverse().map((d) => d.confidence);
+
+  const avgLatencySeconds = totalSignals
+    ? decision!.trace.evidence_snapshot.reduce((sum, e) => sum + e.age_seconds, 0) / totalSignals
+    : 0;
+  const dataSources = decision?.trace.agents_reporting.map((a) => SOURCE_META[a]?.title ?? a).join(" + ");
 
   return (
     <div className="page">
@@ -46,12 +57,36 @@ export default function VehicleDetails() {
         <StatCard label="Policy Pack" value={decision?.policy_pack ?? "—"} />
       </div>
 
-      {confidenceSeries.length >= 2 && (
-        <div className="panel">
-          <h2>Confidence History</h2>
+      <div className="panel">
+        <h2>Confidence History{technical && <span className="tech-caption"> · last {confidenceSeries.length} runs</span>}</h2>
+        {confidenceSeries.length >= 2 ? (
           <Sparkline points={confidenceSeries} width={480} height={70} />
+        ) : (
+          <div className="empty">Run a few checks to see a trend — last 30 minutes will plot here.</div>
+        )}
+        <div className="telemetry-grid" style={{ marginTop: 14 }}>
+          <div className="telemetry-cell">
+            <div className="telemetry-label">Sensor Latency</div>
+            <div className="telemetry-value">{decision ? formatLatency(avgLatencySeconds) : "—"}</div>
+          </div>
+          <div className="telemetry-cell">
+            <div className="telemetry-label">Last Refresh</div>
+            <div className="telemetry-value">{decision ? relativeTime(decision.timestamp) : "—"}</div>
+          </div>
+          <div className="telemetry-cell">
+            <div className="telemetry-label">Data Source</div>
+            <div className="telemetry-value" style={{ fontSize: 14 }}>{dataSources || "—"}</div>
+          </div>
+          <div className="telemetry-cell">
+            <div className="telemetry-label">Trusted / Rejected</div>
+            <div className="telemetry-value">
+              <span className="inline-tone tone-good">{trustedCount}</span>
+              {" / "}
+              <span className={`inline-tone ${rejectedCount ? "tone-bad" : "tone-good"}`}>{rejectedCount}</span>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       <div className="panel">
         <h2>Live Telemetry{technical && <span className="tech-caption"> · raw world state</span>}</h2>

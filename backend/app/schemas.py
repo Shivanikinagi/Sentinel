@@ -139,6 +139,8 @@ class DecisionTrace(BaseModel):
     circuit_breaker_open: bool = False
     decision_chain: list[DecisionStep] = Field(default_factory=list)
     retries: list[DecisionStep] = Field(default_factory=list)
+    feedback_loop_triggered: bool = False
+    feedback_loop_reason: Optional[str] = None
 
 
 class ControllerDecision(BaseModel):

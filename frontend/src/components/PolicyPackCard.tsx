@@ -1,14 +1,12 @@
 // Proves the harness is domain-independent — swapping the active policy pack
 // changes what the Trust Gate requires and how the Risk Assessment Engine
-// reasons, live, without touching gate/critic/controller code.
+// reasons, live, without touching gate/critic/controller code. Kept to an
+// active label + a row of pills — no per-pack description dump.
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import { useFleet } from "../FleetDataContext";
-import { signalLabel } from "../humanize";
 import type { PolicyPackInfo } from "../types";
 
 export function PolicyPackCard() {
-  const { decision } = useFleet();
   const [packs, setPacks] = useState<PolicyPackInfo[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,31 +29,30 @@ export function PolicyPackCard() {
     }
   };
 
+  const activeLabel = packs.find((p) => p.key === active)?.label ?? active ?? "—";
+
   return (
     <div className="panel">
-      <h2>Policy Engine{decision && <span className="tech-caption"> · in use: {decision.policy_pack}</span>}</h2>
-      <div className="policy-pack-grid">
+      <h2>Policy Engine</h2>
+      <div className="panel-sub" style={{ marginBottom: 10 }}>The runtime stays the same — only the policy changes.</div>
+      <div className="policy-pill-row">
+        <span className="policy-pill-label">Active</span>
+        <span className="badge badge-info">{activeLabel}</span>
+      </div>
+      <div className="policy-pill-row" style={{ marginTop: 8 }}>
+        <span className="policy-pill-label">Available</span>
         {packs.map((p) => (
-          <div
+          <button
             key={p.key}
-            className={`policy-pack-card${p.key === active ? " active" : ""}`}
+            className={`policy-pill${p.key === active ? " active" : ""}`}
+            disabled={busy}
             onClick={() => select(p.key)}
-            role="button"
             title={p.description}
           >
-            <div className="policy-pack-card-title">
-              {p.label}
-              {p.key === active && <span className="badge badge-info">ACTIVE</span>}
-            </div>
-            <div className="policy-pack-card-domain">{p.domain}</div>
-            <div className="policy-pack-signals">
-              {p.required_signals.map((s) => (
-                <span key={s} className="chip fresh">{signalLabel(s)}</span>
-              ))}
-            </div>
-          </div>
+            {p.key === active ? "●" : "○"} {p.label}
+          </button>
         ))}
-        {packs.length === 0 && <div className="empty">Loading policy packs…</div>}
+        {packs.length === 0 && <span className="empty">Loading…</span>}
       </div>
     </div>
   );

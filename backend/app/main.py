@@ -62,6 +62,23 @@ class PolicyPackBody(BaseModel):
     key: str
 
 
+class ShipmentBody(BaseModel):
+    """Live Scenario Runner submission — an operator's shipment evaluation
+    request. Thin wrapper over the same world-state + policy-engine surface
+    the /simulate/* and /policy/active endpoints already expose; no new
+    pipeline behaviour, just one call instead of several."""
+    vehicle_id: str | None = None
+    cargo_temperature: float | None = None
+    ambient_temperature: float | None = None
+    cooling_status: bool | None = None
+    policy_pack: str | None = None
+    dwell_minutes: float | None = None
+    agent_a_disabled: bool = False
+    agent_b_disabled: bool = False
+    corrupt_critic: bool = False
+    stale_signal: str | None = None
+
+
 # --------------------------------------------------------------------------- core
 @app.get("/health")
 def health() -> dict:
@@ -158,6 +175,31 @@ def sim_scenario(body: ScenarioBody) -> SimResponse:
         raise HTTPException(400, f"unknown scenario '{body.name}'. "
                                  f"known: {list(world_mod.SCENARIOS)}")
     return SimResponse(ok=True, message=f"scenario set to {body.name}")
+
+
+@app.post("/simulate/shipment", response_model=SimResponse)
+def sim_shipment(body: ShipmentBody) -> SimResponse:
+    """Live Scenario Runner: apply an operator-submitted shipment (or a
+    scenario preset the frontend expanded into one) as the world truth for
+    the next run. Reuses `apply_custom` (world.py) and the existing policy
+    engine — no pipeline or business-logic change."""
+    if body.policy_pack:
+        try:
+            _harness.policy_engine.set_active(body.policy_pack)
+        except KeyError:
+            raise HTTPException(400, f"unknown policy pack '{body.policy_pack}'")
+    world_mod.apply_custom(
+        vehicle_id=body.vehicle_id,
+        cargo_temperature=body.cargo_temperature,
+        ambient_temperature=body.ambient_temperature,
+        cooling_status=body.cooling_status,
+        dwell_minutes=body.dwell_minutes,
+        agent_a_disabled=body.agent_a_disabled,
+        agent_b_disabled=body.agent_b_disabled,
+        corrupt_critic=body.corrupt_critic,
+        stale_signal=body.stale_signal,
+    )
+    return SimResponse(ok=True, message="shipment telemetry applied")
 
 
 @app.post("/simulate/kill-agent", response_model=SimResponse)
@@ -278,6 +320,32 @@ def sim_transient_error() -> SimResponse:
         backend.trigger_transient_error()
         return SimResponse(ok=True, message="Risk Assessment Engine will fail once on the next run, then retry and recover")
     return SimResponse(ok=False, message="transient-error injection only supported on the mock critic backend")
+
+
+@app.post("/simulate/exhaust-retries", response_model=SimResponse)
+def sim_exhaust_retries() -> SimResponse:
+    """Demo hook for the 'failed safely' story: the NEXT run's Risk Assessment
+    Engine fails every attempt (not just once), so the RetryEngine genuinely
+    exhausts and the Controller falls back to INSUFFICIENT_DATA — no action —
+    instead of guessing."""
+    backend = getattr(_harness.critic, "backend", None)
+    if hasattr(backend, "trigger_exhaust_retries_demo"):
+        backend.trigger_exhaust_retries_demo(get_settings().critic_max_attempts)
+        return SimResponse(ok=True, message="Risk Assessment Engine will fail every attempt on the next run — retries will exhaust into INSUFFICIENT_DATA")
+    return SimResponse(ok=False, message="exhaust-retries injection only supported on the mock critic backend")
+
+
+@app.post("/simulate/verifier-feedback", response_model=SimResponse)
+def sim_verifier_feedback() -> SimResponse:
+    """Demo hook for the Verifier -> Risk Assessment Engine feedback loop: the
+    NEXT run's first assessment will include one ungrounded risk factor, so
+    the Verifier rejects it, feeds its reason back, and the Critic's revised
+    (and re-verified) answer can be shown recovering live."""
+    backend = getattr(_harness.critic, "backend", None)
+    if hasattr(backend, "trigger_verifier_feedback_demo"):
+        backend.trigger_verifier_feedback_demo()
+        return SimResponse(ok=True, message="Risk Assessment Engine will emit an ungrounded factor once — Verifier feedback loop will engage on the next run")
+    return SimResponse(ok=False, message="verifier-feedback injection only supported on the mock critic backend")
 
 
 @app.post("/simulate/emergency-override", response_model=SimResponse)

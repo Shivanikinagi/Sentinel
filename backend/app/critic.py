@@ -39,7 +39,7 @@ class CriticResult:
 
 class CriticBackend(Protocol):
     name: str
-    def produce(self, evidence: list[Evidence]) -> dict[str, Any]: ...
+    def produce(self, evidence: list[Evidence], feedback: str | None = None) -> dict[str, Any]: ...
 
 
 # --------------------------------------------------------------------------- API
@@ -47,12 +47,20 @@ class Critic:
     def __init__(self, backend: CriticBackend) -> None:
         self.backend = backend
 
-    def assess(self, evidence: list[Evidence], *, corrupt: bool = False) -> CriticResult:
+    def assess(self, evidence: list[Evidence], *, corrupt: bool = False,
+              feedback: str | None = None) -> CriticResult:
+        """`feedback`, when set, is the Verifier's own rejection reason from a
+        prior pass over THIS evidence — the one place two independent roles
+        negotiate instead of one simply grading the other's single shot (see
+        Supervisor._feedback_loop)."""
         if corrupt:
             # Demo failure #2: force malformed output through real validation.
             return self._validate(_MALFORMED_PAYLOAD, backend="corrupt-injection")
         try:
-            raw = self.backend.produce(evidence)
+            # Passed only when set, so a minimal backend implementing the
+            # original produce(evidence) shape still works unmodified.
+            raw = (self.backend.produce(evidence, feedback=feedback) if feedback is not None
+                  else self.backend.produce(evidence))
         except Exception as exc:  # network/timeout/bad-key -> reject, don't crash
             return CriticResult(
                 matrix=None, rejected=True, backend=self.backend.name,
@@ -95,7 +103,8 @@ class MockCritic:
 
     def __init__(self, pack: PolicyPack = COLD_CHAIN) -> None:
         self._pack = pack
-        self._force_error_once = False
+        self._force_error_remaining = 0
+        self._inject_ungrounded_once = False
 
     def set_pack(self, pack: PolicyPack) -> None:
         """Let the Supervisor swap the active policy pack's reasoning in for
@@ -103,16 +112,44 @@ class MockCritic:
         not just what the gate trusts but how the critic reasons about it."""
         self._pack = pack
 
-    def trigger_transient_error(self) -> None:
-        """Demo hook: the NEXT produce() call raises once, simulating a network
-        blip, so the RetryEngine's second attempt can recover live on stage."""
-        self._force_error_once = True
+    def trigger_transient_error(self, times: int = 1) -> None:
+        """Demo hook: the next `times` produce() calls each raise once,
+        simulating a network blip. `times=1` (the default, used by the
+        recovers-on-retry demo) lets the RetryEngine's second attempt succeed.
+        A `times` at or above the Supervisor's max attempts (see
+        trigger_exhaust_retries_demo) fails every attempt in the SAME run, so
+        the RetryEngine genuinely exhausts and the Controller falls back to
+        INSUFFICIENT_DATA instead of guessing."""
+        self._force_error_remaining = times
 
-    def produce(self, evidence: list[Evidence]) -> dict[str, Any]:
-        if self._force_error_once:
-            self._force_error_once = False
+    def trigger_exhaust_retries_demo(self, attempts: int) -> None:
+        """Demo hook: fails exactly `attempts` consecutive calls — this run's
+        full retry budget (see Supervisor._retry_engine.max_attempts) — so the
+        RetryEngine cannot recover this run, and nothing is left armed to
+        silently fail a LATER run too. The honest 'failed safely' path, not
+        the 'recovered after one retry' path `trigger_transient_error()`
+        demos."""
+        self._force_error_remaining = max(attempts, 1)
+
+    def trigger_verifier_feedback_demo(self) -> None:
+        """Demo hook: the NEXT produce() call (with no feedback yet, i.e. the
+        first pass) appends a risk factor with no supporting telemetry signal,
+        so the Verifier's evidence-grounding check rejects it and Supervisor's
+        feedback loop can be shown live: Critic revises, Verifier re-checks,
+        passes. Consumed on that first call regardless of outcome, so the
+        revision (which arrives WITH feedback set) always comes back clean."""
+        self._inject_ungrounded_once = True
+
+    def produce(self, evidence: list[Evidence], feedback: str | None = None) -> dict[str, Any]:
+        if self._force_error_remaining > 0:
+            self._force_error_remaining -= 1
             raise RuntimeError("simulated transient network error")
-        return self._pack.reasoning_fn(evidence)
+        result = dict(self._pack.reasoning_fn(evidence))
+        if self._inject_ungrounded_once and feedback is None:
+            self._inject_ungrounded_once = False
+            result["risk_factors"] = [*result["risk_factors"], "unauthorized_route_deviation"]
+            result["reasoning_summary"] += " Flagged unauthorized_route_deviation."
+        return result
 
 
 # ------------------------------------------------------------- openrouter backend
@@ -139,12 +176,19 @@ class OpenRouterCritic:
     def __init__(self, settings: Settings) -> None:
         self._s = settings
 
-    def produce(self, evidence: list[Evidence]) -> dict[str, Any]:
+    def produce(self, evidence: list[Evidence], feedback: str | None = None) -> dict[str, Any]:
         payload = [
             {"signal": e.signal, "value": e.value, "unit": e.unit,
              "source": e.source.value, "status": e.status.value}
             for e in evidence
         ]
+        user_content = "Evidence:\n" + json.dumps(payload, indent=2)
+        if feedback:
+            user_content += (
+                "\n\nYour previous assessment was rejected by the Verifier subsystem: "
+                f"{feedback}\nRevise your assessment so every risk factor is grounded in "
+                "the evidence above and respond again with the same schema."
+            )
         headers = {
             "Authorization": f"Bearer {self._s.openrouter_api_key}",
             "HTTP-Referer": "https://github.com/fleet-harness",
@@ -164,7 +208,7 @@ class OpenRouterCritic:
                     "temperature": 0,
                     "messages": [
                         {"role": "system", "content": _SYSTEM_PROMPT},
-                        {"role": "user", "content": "Evidence:\n" + json.dumps(payload, indent=2)},
+                        {"role": "user", "content": user_content},
                     ],
                 }
                 try:

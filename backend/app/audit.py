@@ -20,6 +20,7 @@ class AuditEvent:
     CRITIC_ASSESSED = "critic_assessed"
     CRITIC_REJECTED = "critic_rejected"
     RETRY_ATTEMPTED = "retry_attempted"
+    VERIFIER_FEEDBACK_SENT = "verifier_feedback_sent"
     DECISION_MADE = "decision_made"
     RUN_COMPLETED = "run_completed"
     ACTION_REQUESTED = "action_requested"

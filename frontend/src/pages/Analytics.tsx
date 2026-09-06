@@ -1,13 +1,19 @@
 import { useFleet } from "../FleetDataContext";
 import { StatCard } from "../components";
-import { BarMini, Donut, Sparkline } from "../charts";
+import { Donut, PieMini, Sparkline } from "../charts";
 import { DecisionFunnel } from "../components/DecisionFunnel";
+import { SensorReliabilityCard } from "../components/SensorReliabilityCard";
+import { FailureInjectionCard } from "../components/FailureInjectionCard";
+import { ExplainabilityCard } from "../components/ExplainabilityCard";
+import { MemoryMetricsPanel } from "../components/MemoryMetricsPanel";
+import { riskScore } from "../humanize";
 
 export default function Analytics() {
   const { history, audit, technical } = useFleet();
 
   const chronological = [...history].reverse();
   const confidenceSeries = chronological.map((d) => d.confidence);
+  const riskSeries = chronological.map((d) => riskScore(d.risk_matrix, d.critic_rejected));
 
   const counts = { AUTO_OPTIMIZE: 0, INSUFFICIENT_DATA: 0, CRITICAL_HALT: 0 };
   history.forEach((d) => { counts[d.controller_state] += 1; });
@@ -33,9 +39,13 @@ export default function Analytics() {
 
       <DecisionFunnel />
 
+      <MemoryMetricsPanel />
+
+      <ExplainabilityCard />
+
       <div className="dash-grid">
         <div className="panel">
-          <h2>Confidence Over Time{technical && <span className="tech-caption"> · last {chronological.length} runs</span>}</h2>
+          <h2>Confidence Trend{technical && <span className="tech-caption"> · last {chronological.length} runs</span>}</h2>
           {confidenceSeries.length >= 2 ? (
             <Sparkline points={confidenceSeries} width={480} height={90} />
           ) : (
@@ -44,16 +54,31 @@ export default function Analytics() {
         </div>
 
         <div className="panel">
+          <h2>Risk Trend{technical && <span className="tech-caption"> · last {chronological.length} runs</span>}</h2>
+          {riskSeries.length >= 2 ? (
+            <Sparkline points={riskSeries} width={480} height={90} color="var(--rose)" />
+          ) : (
+            <div className="empty">Run a few checks to see a trend.</div>
+          )}
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="panel">
           <h2>Decision Distribution</h2>
-          <BarMini
+          <PieMini
             items={[
-              { label: "Auto-Optimize", value: counts.AUTO_OPTIMIZE, color: "var(--emerald)" },
-              { label: "Insufficient Data", value: counts.INSUFFICIENT_DATA, color: "var(--amber)" },
+              { label: "Auto Optimize", value: counts.AUTO_OPTIMIZE, color: "var(--emerald)" },
+              { label: "Needs Approval", value: counts.INSUFFICIENT_DATA, color: "var(--amber)" },
               { label: "Critical Halt", value: counts.CRITICAL_HALT, color: "var(--rose)" },
             ]}
           />
         </div>
+
+        <SensorReliabilityCard />
       </div>
+
+      <FailureInjectionCard />
 
       <div className="panel">
         <h2>System Health</h2>
