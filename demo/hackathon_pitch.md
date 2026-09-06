@@ -175,6 +175,14 @@ recheck — visible as a real **"↺ fed back & revised"** badge on the Verifier
 stage, not a claim. This table is the exact narration `create_demo.py` speaks;
 every row is one beat, one audio clip, one real API call.
 
+**Every "we chose this option" moment is ringed on screen, not just spoken.**
+A judge shouldn't have to hunt a small form field while the voiceover claims
+something about it — so the Scenario field, the Cooling/Cargo Temperature
+fields, the Policy Pack field, and the specific Environment Agent stage all
+get a highlight ring (a dimmed background + a blue outline, the same
+mechanism already used to ring the pipeline stages and result cards) at the
+exact moment the narration references them.
+
 | Beat | On screen | Say |
 |---|---|---|
 | b01 | Dashboard | "When AI makes operational decisions, **intelligence isn't the hard part — trust is.** Cargo here spoils outside two to six degrees." |
